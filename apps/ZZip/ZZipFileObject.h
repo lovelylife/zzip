@@ -4,24 +4,22 @@
 
 #pragma once
 
-#include "ZZipLib.h"
+#include "ref_counted.h"
+#include "ZZip.h"
 
-class ZZipFileObject {
+class ZZipFileObject : public base::RefCountedThreadSafe<ZZipFileObject> {
 public:
-	ZZipFileObject(const ZZipFileItem& FileItem, std::string& sName);
+	ZZipFileObject();
 	~ZZipFileObject(void);
 
-public: 
-
-	
-	
-private:
+	void ZZipPathFromPath( const tstring& sPath);
+	friend class ZZipFile;
+private: 
 	ZZipFileItem FileItem_;
-	std::string sParentPath_;	// end with character '/'
-	std::string sName_;			// 
-	bool bFolder_;				// false => file, true : folder
-	bool bValid_;				// 是否有效
-};
+	tstring sParentPath_;	// end with character '/'
+	tstring sName_;			// 
+	tstring sLocalPath_;	// 本地路径，如果为空则为ZZip文件文具
 
+};
 
 #endif

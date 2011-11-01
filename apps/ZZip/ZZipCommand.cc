@@ -20,8 +20,8 @@ ZZipCommand::ZZipCommand( int argc, _TCHAR* argv[] ) {
 			action = zz;
 		} else if(sAction.compare(_T("uz")) == 0) {
 			action = uz;
-		} else if(sAction.compare(_T("app")) == 0) {
-			action = app;
+		} else if(sAction.compare(_T("add")) == 0) {
+			action = add;
 		} else if(sAction.compare(_T("rmv")) == 0) {
 			action = rmv;
 		} else if(sAction.compare(_T("help")) == 0) {

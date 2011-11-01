@@ -1,60 +1,31 @@
 
-#ifndef __ZZIPFILE_H__
-#define __ZZIPFILE_H__
+#ifndef __ZZIPLIB_H__
+#define __ZZIPLIB_H__
 
 #pragma once
 
-//////////////////////////////////////////////////////////////////////////
-// ZZip文件压缩
-// 文件数据结构示意图
-//
-// 	 ________________________
-// 	|						 |
-// 	|						 |
-// 	|	files list data		 |
-// 	|						 |
-// 	|________________________|
-// 	|						 |
-// 	|		XML	Archive 	 |
-// 	|________________________|
-// 	|						 |
-// 	|		header			 |
-// 	|________________________|
-//
-//////////////////////////////////////////////////////////////////////////
+#include <typedefs.h>
 
-#include <../base/typedefs.h>
-#include <list>
-#include "ZZipLib.h"
-#include "ZZipFileObject.h"
+#define ZZIP_SIG "ZZip"
+#define ZZIP_SIG_LEN  4
 
-class ZZipFile {
-public:
-	typedef std::list<ZZipFileObject>		FILEOBJECTS;
+// 文件头部分
+typedef struct  {
+	char	sig[ZZIP_SIG_LEN];	// 头部标识
+	uint32	version;			// 文件版本
+	uint32	options;			// 文件选项标识
+	uint64	offset;			// 文件目录结构偏移量，结束位置为文件末尾
+} ZZipFileHeader;
 
-public:
-	ZZipFile(void);
-	~ZZipFile(void);
-
-public: 
-	// 处理命令行模式
-	uint32 Command(int argc, _TCHAR* argv[]);
-	bool Open(const _TCHAR* lpszFileName );
-	bool Save();
-	bool AddFile(const _TCHAR* lpszZZipPath, const _TCHAR* lpszLocalFileName );
-	bool RemoveFile(const _TCHAR* lpszZZipPath);
-	// 通过路径查找并提取文件
-	bool ExtractFile(const _TCHAR* lpszPath);
-protected:
-	
-	
-private:
-	bool ParseFileHeader();
-
-private:
-	ZZipHeader	ZZipHeader_;
-	FILEOBJECTS FileObjects_;
-};
-
+typedef struct {
+	uint64 size;			// 结构体大小
+	uint64 md5code;			// md5校验码
+	uint64 offset;			// 文件偏移量
+	uint64 filesize;		// 文件大小
+	uint32 createtime;		// 创建时间
+	uint32 lastmodify;		// 修改时间
+	uint32 namelen;			// 名称长度
+	// char data[1];		// 路径和名称/密钥等等
+} ZZipFileItem;
 
 #endif
