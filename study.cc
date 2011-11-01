@@ -20,7 +20,7 @@ CAppClass theApp;
 
 int main(int argc, _TCHAR* argv[])
 {
-	theApp.run();
+	theApp.run(argc, argv);
 	theApp.stop();
 
 #ifdef USING_DEBUG
