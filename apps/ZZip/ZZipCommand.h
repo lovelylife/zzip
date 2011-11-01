@@ -8,27 +8,30 @@
 // 命令行解析器
 //////////////////////////////////////////////////////////////////////////
 
-#include <../base/typedefs.h>
+#include <typedefs.h>
+#include "ZZip.h"
 
 class ZZipCommand {
 
 	typedef enum {
 		zz,			// 压缩
 		uz,			// 解压
-		app,		// 添加文件
+		add,		// 添加文件
 		rmv,		// 删除文件
 		help,		// 帮助
 		
 	} ACTION;
 
 public:
-	ZZipCommand(int argc, _TCHAR* argv[]);
+	ZZipCommand(int argc, TCHAR* argv[]);
 	~ZZipCommand(void);
 
+// methods
+public:
+	void PrintHelpInfo();
 public:
 	ACTION action;
 	tstring file; 
-
 };
 
 
