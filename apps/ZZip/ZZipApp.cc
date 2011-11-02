@@ -13,7 +13,7 @@ ZZipApp::ZZipApp() {
 ZZipApp::~ZZipApp() {}
 
 // public
-bool ZZipApp::run(int argc, _TCHAR* argv[]) {
+bool ZZipApp::run(int argc, TCHAR* argv[]) {
 	bool bRet = true; // base::framework::IApplication::run();
 	// TODO:
 	// do something

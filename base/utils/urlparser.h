@@ -2,8 +2,7 @@
 #ifndef __URLPARSER_H__
 #define __URLPARSER_H__
 
-#include "../typedefs.h"
-#include <string>
+#include "typedefs.h"
 #include <map>
 
 
@@ -31,16 +30,7 @@ namespace base {
 			void dump();
 #endif
 			// URL的组成元素的标识
-			typedef enum {
-				SCHEME = 0,
-				USER   = 1,
-				PASSWORD,
-				DOMAIN	,
-				PORT	,
-				PATH	,
-				QUERY	,
-				ANCHOR	,
-			} URL_;
+			typedef enum {SCHEME=0,USER,PASSWORD,DOMAINS,PORT,PATH,QUERY,ANCHOR,} URL_;
 
 		protected:
 
