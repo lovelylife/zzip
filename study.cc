@@ -3,7 +3,6 @@
 
 #include "stdafx.h"
 #include <iostream>
-#include "base/ref_counted.h"
 #include "base/application.h"
 #include <fstream>
 
@@ -18,7 +17,7 @@ using namespace std;
 
 CAppClass theApp;
 
-int main(int argc, _TCHAR* argv[])
+int _tmain(int argc, TCHAR* argv[])
 {
 	theApp.run(argc, argv);
 	theApp.stop();

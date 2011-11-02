@@ -89,10 +89,10 @@ bool base::utils::UrlParser::parseDomain(const char* szDomain) {
 	//! host:port
 	size_t portPos = sDomain.find(":", curPos);
 	if(portPos != std::string::npos) {
-		UrlParams_[DOMAIN] = sDomain.substr(curPos,portPos-curPos);
+		UrlParams_[DOMAINS] = sDomain.substr(curPos,portPos-curPos);
 		UrlParams_[PORT] = sDomain.substr(portPos+1,sDomain.size()-(portPos+1));
 	} else {
-		UrlParams_[DOMAIN] = sDomain.substr(curPos,sDomain.size()-curPos);
+		UrlParams_[DOMAINS] = sDomain.substr(curPos,sDomain.size()-curPos);
 	}
 
 	return true;

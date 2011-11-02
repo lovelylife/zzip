@@ -69,15 +69,20 @@ bool ZZipFile::Open( const tstring& sFileName ) {
 			FileStreamReader_.read((char*)&FileObjectPtr->FileItem_, std::streamsize(sizeof(ZZipFileItem))-1);
 
 			// 读取路径
-			tstring sTemp;
+			std::string sTemp;
 			size = FileObjectPtr->FileItem_.namelen;
 
-			while(size < 0) {
-				FileStreamReader_.read(buffer, sizeof(buffer));
+			while(size > 0) {
+				if(size > sizeof(buffer)) {
+					FileStreamReader_.read(buffer, sizeof(buffer));
+				} else {
+					FileStreamReader_.read(buffer, size);
+				}				
+				sTemp.append(buffer, FileStreamReader_.gcount());
 				size -= FileStreamReader_.gcount();
 			}
 
-			FileObjectPtr->ZZipPathFromPath(sTemp);
+			FileObjectPtr->ZZipPathFromPath(tstring(CA2T(sTemp.c_str())));
 			FileObjects_.push_back(FileObjectPtr);
 		}		
 	}
@@ -127,7 +132,7 @@ bool ZZipFile::Save()
 	// 写入目录结构
 	for(; it != FileObjects_.end(); it++) {
 		refptr<ZZipFileObject> zzipfile=(*it); 
-		//zzipfile->FileItem_.namelen = zzipfile->sParentPath_.size() + zzipfile->sName_.size();
+		zzipfile->FileItem_.namelen = zzipfile->sParentPath_.size() + zzipfile->sName_.size();
 		writer.write((const char*)&zzipfile->FileItem_, sizeof(ZZipFileItem)-1);
 		writer.write(CT2A(zzipfile->sParentPath_.c_str()), zzipfile->sParentPath_.size());
 		writer.write(CT2A(zzipfile->sName_.c_str()), zzipfile->sName_.size());
@@ -183,4 +188,9 @@ void ZZipFile::Close()
 	if(FileStreamReader_.is_open()) {
 		FileStreamReader_.close();
 	}
+}
+
+bool ZZipFile::AddFolder( const tstring& sZZipPath, const tstring& sLocalFolder )
+{
+	return true;
 }

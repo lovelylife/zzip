@@ -41,8 +41,8 @@ public:
 	// 处理命令行模式
 //	uint32 Command(int argc, TCHAR* argv[]);
 	bool Open(const tstring& lpszFileName );
-	
-	bool AddFile(const tstring& lpszZZipPath, const tstring& lpszLocalFileName );
+	bool AddFolder(const tstring& sZZipPath, const tstring& sLocalFolder );
+	bool AddFile(const tstring& sZZipPath, const tstring& sLocalFileName );
 	refptr<ZZipFileObject> RemoveFile(const tstring& lpszZZipPath);
 	// 通过路径查找并提取文件
 	bool ExtractFile(const tstring& lpszPath);
