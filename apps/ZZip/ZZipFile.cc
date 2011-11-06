@@ -45,15 +45,17 @@ bool ZZipFile::Open( const tstring& sFileName ) {
 
 	FileStreamReader_.seekg(0, std::ios::end);
 	size_t filesize = FileStreamReader_.tellg();
+	
+	// 文件不为空且头部大小小于sizeof(ZZipFileHeader则是个无效的文件
 	if(filesize <= 0) {
-		// 空文件
-		return false;
+		// 空文件，不需要解析
+		return true;
 	}
 	ZZipFileHeader hdr = {0};
 	if(filesize < sizeof(ZZipFileHeader)) {
 		std::cout << "Invalid file data!" << std::endl;
 		return false;
-	}
+	}		
 
 	// 读取文件头部分
 	FileStreamReader_.seekg(std::ios::beg);
@@ -83,6 +85,7 @@ bool ZZipFile::Open( const tstring& sFileName ) {
 			}
 
 			FileObjectPtr->ZZipPathFromPath(tstring(CA2T(sTemp.c_str())));
+			FileObjectPtr->AddRef();
 			FileObjects_.push_back(FileObjectPtr);
 		}		
 	}
@@ -175,11 +178,32 @@ refptr<ZZipFileObject> ZZipFile::RemoveFile( const tstring& sZZipPath )
 
 bool ZZipFile::AddFile( const tstring& sZZipPath, const tstring& sLocalFileName )
 {
-	refptr<ZZipFileObject> fileobjectptr = new ZZipFileObject();
-	fileobjectptr->AddRef();
-	fileobjectptr->sLocalPath_ = sLocalFileName;
-	fileobjectptr->ZZipPathFromPath(sZZipPath);
-	FileObjects_.push_back(fileobjectptr);
+	refptr<ZZipFileObject> new_object = new ZZipFileObject();
+	new_object->sLocalPath_ = sLocalFileName;
+	new_object->ZZipPathFromPath(sZZipPath);
+
+	// 检测是否存在该文件
+	bool bFileExists = false;
+	ZZipFileObjects::iterator it = FileObjects_.begin();
+	for(; it != FileObjects_.end(); it++) {
+		refptr<ZZipFileObject> object = (*it);
+		if((object->sParentPath_ == new_object->sParentPath_)
+			&& (object->sName_ == new_object->sName_)) 
+		{
+			// 文件已经存在
+			FileObjects_.insert(it, 1, new_object);
+			object->Release();
+			FileObjects_.erase(it);
+			bFileExists = true;
+			break;
+		}
+	}
+	
+	if(!bFileExists) {
+		new_object->AddRef();
+		FileObjects_.push_back(new_object);
+	}
+	
 	return true;
 }
 
