@@ -38,16 +38,33 @@ public:
 	~ZZipFile(void);
 
 public: 
-	// 处理命令行模式
+// 处理命令行模式
 //	uint32 Command(int argc, TCHAR* argv[]);
+
+// 打开ZZip文件
 	bool Open(const tstring& lpszFileName );
-	bool AddFolder(const tstring& sZZipPath, const tstring& sLocalFolder );
-	bool AddFile(const tstring& sZZipPath, const tstring& sLocalFileName );
-	refptr<ZZipFileObject> RemoveFile(const tstring& lpszZZipPath);
-	// 通过路径查找并提取文件
-	bool ExtractFile(const tstring& lpszPath);
+
+// 保存ZZip文件
 	bool Save();
+
+// 关闭ZZip文件
 	void Close();
+
+// 添加文件夹
+	bool AddFolder(const tstring& sZZipPath, const tstring& sLocalFolder);
+
+// 添加文件
+	bool AddFile(const tstring& sZZipPath, const tstring& sLocalFileName);
+
+// 删除文件夹
+	refptr<ZZipFileObject> RemoveFile(const tstring& sZZipPath);
+
+// 重命名
+	bool RenameFile(const tstring& sOldPath, const tstring& sNewPath);
+
+// 通过路径查找并提取文件
+	bool ExtractFile(const tstring& lpszPath);
+
 protected:
 	
 	

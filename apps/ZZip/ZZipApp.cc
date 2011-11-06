@@ -25,13 +25,15 @@ bool ZZipApp::run(int argc, TCHAR* argv[]) {
 
 	ZZipFile zip;
 	if(argc <= 1) { return 0; }
-	zip.Open(argv[1]);
-	zip.AddFile(_T("/1.txt"), _T("C:\\1.txt"));
-	zip.AddFile(_T("/2.txt"), _T("C:\\2.txt"));
-	zip.AddFile(_T("/3.txt"), _T("C:\\3.txt"));
-	zip.AddFile(_T("/4.gif"), _T("C:\\4.gif"));
-	zip.Save();
-	zip.Close();
+	if(zip.Open(argv[1])) {
+		zip.AddFile(_T("/1.txt"), _T("C:\\1.txt"));
+		zip.AddFile(_T("/2.txt"), _T("C:\\2.txt"));
+		zip.AddFile(_T("/3.txt"), _T("C:\\3.txt"));
+		zip.AddFile(_T("/4.gif"), _T("C:\\4.gif"));
+		zip.Save();
+		zip.Close();
+	}
+	
 	return bRet;
 }
 
