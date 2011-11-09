@@ -12,12 +12,12 @@ public:
 	ZZipFileObject();
 	~ZZipFileObject(void);
 
-	void ZZipPathFromPath( const tstring& sPath);
+	bool ZZipPathFromPath( const tstring& sPath);
+	bool IsFolder();
 	friend class ZZipFile;
 private: 
 	ZZipFileItem FileItem_;
-	tstring sParentPath_;	// end with character '/'
-	tstring sName_;			// 
+	tstring sPath_;			// 路径
 	tstring sLocalPath_;	// 本地路径，如果为空则为ZZip文件文具
 
 };

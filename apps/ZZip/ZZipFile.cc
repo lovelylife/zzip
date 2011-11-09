@@ -87,7 +87,7 @@ bool ZZipFile::Open( const tstring& sFileName ) {
 			FileObjectPtr->ZZipPathFromPath(tstring(CA2T(sTemp.c_str())));
 			FileObjectPtr->AddRef();
 			FileObjects_.push_back(FileObjectPtr);
-		}		
+		}
 	}
 	return true;
 }
@@ -135,10 +135,9 @@ bool ZZipFile::Save()
 	// 写入目录结构
 	for(; it != FileObjects_.end(); it++) {
 		refptr<ZZipFileObject> zzipfile=(*it); 
-		zzipfile->FileItem_.namelen = zzipfile->sParentPath_.size() + zzipfile->sName_.size();
+		zzipfile->FileItem_.namelen = zzipfile->sPath_.size();
 		writer.write((const char*)&zzipfile->FileItem_, sizeof(ZZipFileItem)-1);
-		writer.write(CT2A(zzipfile->sParentPath_.c_str()), zzipfile->sParentPath_.size());
-		writer.write(CT2A(zzipfile->sName_.c_str()), zzipfile->sName_.size());
+		writer.write(CT2A(zzipfile->sPath_.c_str()), zzipfile->sPath_.size());
 	}
 
 	// 写文件头
@@ -164,12 +163,10 @@ refptr<ZZipFileObject> ZZipFile::RemoveFile( const tstring& sZZipPath )
 	refptr<ZZipFileObject> object;
 	ZZipFileObjects::iterator it = FileObjects_.begin();
 	for(; it != FileObjects_.end(); it++) {
-		tstring sTemp = (*it)->sParentPath_;
-		sTemp += (*it)->sName_;
+		tstring sTemp = (*it)->sPath_;
 		if(sZZipPath.compare(sTemp)) {
 			object = (ZZipFileObject*)(*it);
 			FileObjects_.erase(it);
-			return object;
 			break;
 		}
 	}
@@ -187,13 +184,14 @@ bool ZZipFile::AddFile( const tstring& sZZipPath, const tstring& sLocalFileName 
 	ZZipFileObjects::iterator it = FileObjects_.begin();
 	for(; it != FileObjects_.end(); it++) {
 		refptr<ZZipFileObject> object = (*it);
-		if((object->sParentPath_ == new_object->sParentPath_)
-			&& (object->sName_ == new_object->sName_)) 
+		if(object->sPath_ == new_object->sPath_) 
 		{
 			// 文件已经存在
 			FileObjects_.insert(it, 1, new_object);
 			object->Release();
-			FileObjects_.erase(it);
+			delete object;
+			new_object->AddRef();
+			object = new_object;			
 			bFileExists = true;
 			break;
 		}
