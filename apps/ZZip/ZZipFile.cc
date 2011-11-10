@@ -64,12 +64,14 @@ bool ZZipFile::Open( const tstring& sFileName ) {
 	// 读取目录结构
 	FileStreamReader_.seekg(hdr.offset);
 	{
+
 		char buffer[1024] = {0};
 		std::streamsize size = 0;
-		while(!FileStreamReader_.eof()) {
+		std::streamsize restsize = filesize - hdr.offset;
+		while((!FileStreamReader_.eof()) && restsize > 0) {
 			refptr<ZZipFileObject> FileObjectPtr = new ZZipFileObject;
-			FileStreamReader_.read((char*)&FileObjectPtr->FileItem_, std::streamsize(sizeof(ZZipFileItem))-1);
-
+			FileStreamReader_.read((char*)&FileObjectPtr->FileItem_, std::streamsize(sizeof(ZZipFileItem)));
+			restsize -= sizeof(ZZipFileItem);
 			// 读取路径
 			std::string sTemp;
 			size = FileObjectPtr->FileItem_.namelen;
@@ -82,6 +84,7 @@ bool ZZipFile::Open( const tstring& sFileName ) {
 				}				
 				sTemp.append(buffer, FileStreamReader_.gcount());
 				size -= FileStreamReader_.gcount();
+				restsize -= FileStreamReader_.gcount(); 
 			}
 
 			FileObjectPtr->ZZipPathFromPath(tstring(CA2T(sTemp.c_str())));
@@ -100,12 +103,10 @@ bool ZZipFile::Save()
 	sTempFileName += _T(".__zzip__");
 	std::ofstream writer;
 	writer.open(sTempFileName.c_str());
-	if(!writer.good()) {
-		return false;
-	}
+	if(!writer.good()) { return false; }
 
 	// 先移动文件头大小位置
-	writer.seekp(writer.beg);
+	writer.seekp(std::ios::beg);
 	writer.seekp(sizeof(ZZipFileHeader));
 
 	// 写入文件数据
@@ -113,21 +114,22 @@ bool ZZipFile::Save()
 	ZZipFileObjects::iterator it = FileObjects_.begin();
 	for(; it != FileObjects_.end(); it++) {
 		refptr<ZZipFileObject> zzipfile = (*it);
+		zzipfile->FileItem_.offset = writer.tellp();
 		std::ifstream f(zzipfile->sLocalPath_.c_str(), std::ios::binary);
-
+		if(f.good()) { continue; }
 		std::streamsize filesize = 0;
-		if(f.is_open()) {
-			while(!f.eof()) {
-				memset(buffer, 0, sizeof(buffer));
-				f.read(buffer, sizeof(buffer));
-				std::streamsize ReadBytes = f.gcount();
-				writer.write(buffer, ReadBytes);
-				filesize += ReadBytes;
-			}
-			f.close();
-			zzipfile->FileItem_.offset = writer.tellp();
-			zzipfile->FileItem_.filesize = filesize;
-		}		
+		f.seekg(std::ios::beg, std::ios::end);
+		zzipfile->FileItem_.filesize = f.tellg();
+		f.seekg(std::ios::beg);
+		std::streamsize filecount = zzipfile->FileItem_.filesize;
+		while((!f.eof()) && (filecount > 0)) {
+			memset(buffer, 0, sizeof(buffer));
+			f.read(buffer, sizeof(buffer));
+			std::streamsize ReadBytes = f.gcount();
+			writer.write(buffer, ReadBytes);
+			filecount -= ReadBytes;
+		}
+		f.close();		
 	}
 
 	ZZipFileHeader_.offset  = writer.tellp();
@@ -136,7 +138,7 @@ bool ZZipFile::Save()
 	for(; it != FileObjects_.end(); it++) {
 		refptr<ZZipFileObject> zzipfile=(*it); 
 		zzipfile->FileItem_.namelen = zzipfile->sPath_.size();
-		writer.write((const char*)&zzipfile->FileItem_, sizeof(ZZipFileItem)-1);
+		writer.write((const char*)&zzipfile->FileItem_, sizeof(ZZipFileItem));
 		writer.write(CT2A(zzipfile->sPath_.c_str()), zzipfile->sPath_.size());
 	}
 
@@ -175,7 +177,7 @@ refptr<ZZipFileObject> ZZipFile::RemoveFile( const tstring& sZZipPath )
 
 bool ZZipFile::AddFile( const tstring& sZZipPath, const tstring& sLocalFileName )
 {
-	refptr<ZZipFileObject> new_object = new ZZipFileObject();
+	ZZipFileObject* new_object = new ZZipFileObject();
 	new_object->sLocalPath_ = sLocalFileName;
 	new_object->ZZipPathFromPath(sZZipPath);
 
