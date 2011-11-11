@@ -293,14 +293,6 @@
 		<Filter
 			Name="apps"
 			>
-			<File
-				RelativePath=".\apps\domainupdate.cc"
-				>
-			</File>
-			<File
-				RelativePath=".\apps\domainupdate.h"
-				>
-			</File>
 			<Filter
 				Name="ZZip"
 				>
@@ -318,6 +310,10 @@
 				</File>
 				<File
 					RelativePath=".\apps\ZZip\ZZipFileObject.cc"
+					>
+				</File>
+				<File
+					RelativePath=".\apps\ZZip\ZZipPathHelper.cc"
 					>
 				</File>
 			</Filter>

@@ -216,5 +216,6 @@ void ZZipFile::Close()
 
 bool ZZipFile::AddFolder( const tstring& sZZipPath, const tstring& sLocalFolder )
 {
+	
 	return true;
 }
