@@ -114,14 +114,18 @@ bool ZZipFile::Save()
 	ZZipFileObjects::iterator it = FileObjects_.begin();
 	for(; it != FileObjects_.end(); it++) {
 		refptr<ZZipFileObject> zzipfile = (*it);
+		// 记录文件偏移量
 		zzipfile->FileItem_.offset = writer.tellp();
+		// 读取本地文件
 		std::ifstream f(zzipfile->sLocalPath_.c_str(), std::ios::binary);
-		if(f.good()) { continue; }
+		if(!f.good()) { continue; }
+		// 计算文件大小
 		std::streamsize filesize = 0;
 		f.seekg(std::ios::beg, std::ios::end);
 		zzipfile->FileItem_.filesize = f.tellg();
 		f.seekg(std::ios::beg);
 		std::streamsize filecount = zzipfile->FileItem_.filesize;
+		// 读取文件内容并写入Writer
 		while((!f.eof()) && (filecount > 0)) {
 			memset(buffer, 0, sizeof(buffer));
 			f.read(buffer, sizeof(buffer));
@@ -129,9 +133,10 @@ bool ZZipFile::Save()
 			writer.write(buffer, ReadBytes);
 			filecount -= ReadBytes;
 		}
-		f.close();		
+		f.close();
 	}
 
+	// 设置文件目录结构位置
 	ZZipFileHeader_.offset  = writer.tellp();
 	it = FileObjects_.begin();
 	// 写入目录结构
@@ -177,7 +182,7 @@ refptr<ZZipFileObject> ZZipFile::RemoveFile( const tstring& sZZipPath )
 
 bool ZZipFile::AddFile( const tstring& sZZipPath, const tstring& sLocalFileName )
 {
-	ZZipFileObject* new_object = new ZZipFileObject();
+	refptr<ZZipFileObject> new_object = new ZZipFileObject();
 	new_object->sLocalPath_ = sLocalFileName;
 	new_object->ZZipPathFromPath(sZZipPath);
 
@@ -186,14 +191,11 @@ bool ZZipFile::AddFile( const tstring& sZZipPath, const tstring& sLocalFileName 
 	ZZipFileObjects::iterator it = FileObjects_.begin();
 	for(; it != FileObjects_.end(); it++) {
 		refptr<ZZipFileObject> object = (*it);
-		if(object->sPath_ == new_object->sPath_) 
-		{
+		if(object->sPath_ == new_object->sPath_) {
 			// 文件已经存在
-			FileObjects_.insert(it, 1, new_object);
 			object->Release();
-			delete object;
 			new_object->AddRef();
-			object = new_object;			
+			*it = new_object;
 			bFileExists = true;
 			break;
 		}
@@ -202,8 +204,7 @@ bool ZZipFile::AddFile( const tstring& sZZipPath, const tstring& sLocalFileName 
 	if(!bFileExists) {
 		new_object->AddRef();
 		FileObjects_.push_back(new_object);
-	}
-	
+	}	
 	return true;
 }
 
@@ -216,6 +217,6 @@ void ZZipFile::Close()
 
 bool ZZipFile::AddFolder( const tstring& sZZipPath, const tstring& sLocalFolder )
 {
-	
+	ZZipPathHelper PathHelper;
 	return true;
 }
