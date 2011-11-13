@@ -5,6 +5,8 @@
 #include <fstream>
 #include <atlbase.h>
 #include <atlconv.h>
+#include <algorithm>
+#include <io.h>
 #include "ZZipFile.h"
 #include "ZZipCommand.h"
 
@@ -34,17 +36,17 @@ ZZipFile::~ZZipFile(void)
 bool ZZipFile::Open( const tstring& sFileName ) {
 	sZZipFileName_ = sFileName;
 	if(sFileName.empty() ) return false;
-	if(FileStreamReader_.is_open()) { return true; }
-	FileStreamReader_.open(sFileName.c_str(), std::ios::binary);
-	if(!FileStreamReader_.is_open()) {
+	if(!StreamReader_.fail()) { Close(); }
+	StreamReader_.open(sFileName.c_str(), std::ios::binary);
+	if(!StreamReader_.good()) {
 		std::cout << "Open file " << CT2A(sFileName.c_str()) << " error." << std::endl;
 		return false;
 	} 
 
 	std::cout << "Open file " << CT2A(sFileName.c_str()) << " success." << std::endl;
 
-	FileStreamReader_.seekg(0, std::ios::end);
-	size_t filesize = FileStreamReader_.tellg();
+	StreamReader_.seekg(0, std::ios::end);
+	uint64 filesize = StreamReader_.tellg();
 	
 	// 文件不为空且头部大小小于sizeof(ZZipFileHeader则是个无效的文件
 	if(filesize <= 0) {
@@ -58,33 +60,34 @@ bool ZZipFile::Open( const tstring& sFileName ) {
 	}		
 
 	// 读取文件头部分
-	FileStreamReader_.seekg(std::ios::beg);
-	FileStreamReader_.read((char*)&hdr, sizeof(ZZipFileHeader));
+	StreamReader_.seekg(0);
+	StreamReader_.read((char*)&hdr, sizeof(ZZipFileHeader));
 
 	// 读取目录结构
-	FileStreamReader_.seekg(hdr.offset);
+	StreamReader_.seekg(hdr.offset);
 	{
 
 		char buffer[1024] = {0};
 		std::streamsize size = 0;
 		std::streamsize restsize = filesize - hdr.offset;
-		while((!FileStreamReader_.eof()) && restsize > 0) {
+		while((!StreamReader_.eof()) && restsize > 0) {
 			refptr<ZZipFileObject> FileObjectPtr = new ZZipFileObject;
-			FileStreamReader_.read((char*)&FileObjectPtr->FileItem_, std::streamsize(sizeof(ZZipFileItem)));
+			StreamReader_.read((char*)&FileObjectPtr->FileItem_, std::streamsize(sizeof(ZZipFileItem)));
 			restsize -= sizeof(ZZipFileItem);
 			// 读取路径
 			std::string sTemp;
 			size = FileObjectPtr->FileItem_.namelen;
 
-			while(size > 0) {
+			while((size > 0) && (!StreamReader_.eof())) {
 				if(size > sizeof(buffer)) {
-					FileStreamReader_.read(buffer, sizeof(buffer));
+					StreamReader_.read(buffer, sizeof(buffer));
 				} else {
-					FileStreamReader_.read(buffer, size);
-				}				
-				sTemp.append(buffer, FileStreamReader_.gcount());
-				size -= FileStreamReader_.gcount();
-				restsize -= FileStreamReader_.gcount(); 
+					StreamReader_.read(buffer, size);
+				}
+				if(!StreamReader_.gcount()) break;
+				sTemp.append(buffer, StreamReader_.gcount());
+				size -= StreamReader_.gcount();
+				restsize -= StreamReader_.gcount(); 
 			}
 
 			FileObjectPtr->ZZipPathFromPath(tstring(CA2T(sTemp.c_str())));
@@ -139,12 +142,15 @@ bool ZZipFile::Save()
 	// 设置文件目录结构位置
 	ZZipFileHeader_.offset  = writer.tellp();
 	it = FileObjects_.begin();
+	char szPath[_MAX_PATH] = {0};
 	// 写入目录结构
 	for(; it != FileObjects_.end(); it++) {
 		refptr<ZZipFileObject> zzipfile=(*it); 
-		zzipfile->FileItem_.namelen = zzipfile->sPath_.size();
+		//zzipfile->FileItem_.namelen = zzipfile->sPath_.size();
+		zzipfile->FileItem_.namelen = WideCharToMultiByte(CP_ACP, 0, zzipfile->sPath_.c_str(), wcslen(zzipfile->sPath_.c_str()) + 1, szPath, _MAX_PATH, NULL, NULL);
+		if(zzipfile->FileItem_.namelen < 1) { continue; }
 		writer.write((const char*)&zzipfile->FileItem_, sizeof(ZZipFileItem));
-		writer.write(CT2A(zzipfile->sPath_.c_str()), zzipfile->sPath_.size());
+		writer.write(szPath, zzipfile->FileItem_.namelen );
 	}
 
 	// 写文件头
@@ -152,7 +158,7 @@ bool ZZipFile::Save()
 	writer.write((char*)&ZZipFileHeader_, sizeof(ZZipFileHeader));
 
 	writer.close();
-	FileStreamReader_.close();
+	StreamReader_.close();
 
 	remove(CT2A(sZZipFileName_.c_str()));
 	// 使用当前名称
@@ -210,13 +216,105 @@ bool ZZipFile::AddFile( const tstring& sZZipPath, const tstring& sLocalFileName 
 
 void ZZipFile::Close()
 {
-	if(FileStreamReader_.is_open()) {
-		FileStreamReader_.close();
+	ZZipFileObjects::iterator it = FileObjects_.begin();
+	for(; it != FileObjects_.end(); it++) {
+		(*it)->Release();
+	}
+	FileObjects_.clear();
+	StreamReader_.clear();
+	if(StreamReader_.is_open()) {
+		StreamReader_.close();		
 	}
 }
 
-bool ZZipFile::AddFolder( const tstring& sZZipPath, const tstring& sLocalFolder )
+bool ZZipFile::AddFolder( tstring sZZipPath, tstring sLocalFolder )
 {
-	ZZipPathHelper PathHelper;
+	// 检查sZZipPath是否("/") 
+	if(sZZipPath.empty()) {
+		sZZipPath.append(1, _T('/'));
+	} else {
+		std::replace(sZZipPath.begin(), sZZipPath.end(), _T('\\'), _T('/'));
+		if(sZZipPath[sZZipPath.size()-1] != _T('/')) {
+			sZZipPath.append(1, _T('/'));
+		}
+	}
+	//查找dir中的子目录 
+	long hFile; 
+	_tfinddata_t FileData = {0}; 
+	if(_tchdir(sLocalFolder.c_str())!=0) return false;
+
+	// 检查("/") 
+	std::replace(sLocalFolder.begin(), sLocalFolder.end(), _T('\\'), _T('/'));
+ 	if(sLocalFolder[sLocalFolder.size()-1] != _T('/')) {
+ 		sLocalFolder.append(1, _T('/'));
+ 	}
+
+	if ((hFile=_tfindfirst(_T("*.*"), &FileData)) != -1) {
+		do { 
+			//检查是不是目录 
+			//如果是,再检查是不是 . 或 .. 
+			//如果不是,进行迭代
+			if ((FileData.attrib & _A_SUBDIR)) { 
+				if ((_tcscmp(FileData.name, _T(".")) != 0 )	
+					&& (_tcscmp(FileData.name, _T("..")) != 0)
+				) {
+					tstring sSubDir=sLocalFolder;
+					sSubDir += FileData.name;
+					sSubDir.append(1, _T('/'));
+
+					tstring sSubZZipPath = sZZipPath;
+					sSubZZipPath += FileData.name;
+					sSubZZipPath.append(1, _T('/'));
+
+					// 添加目录
+					if(!AddFolder(sSubZZipPath, sSubDir)) return false;
+				}
+			} else {
+				tstring sLocalPath;
+				sLocalPath = sLocalFolder;
+				sLocalPath += FileData.name;
+				tstring sPath;
+				sPath = sZZipPath;
+				sPath += FileData.name;
+				// 添加文件
+				AddFile(sPath, sLocalPath);
+			}
+		} while (_tfindnext(hFile,&FileData) == 0); 
+		_findclose(hFile); 
+	} 
 	return true;
+}
+
+const ZZipFileObject* ZZipFile::Find( const tstring& lpszPath )
+{
+	ZZipFileObject* p = NULL;
+	ZZipFileObjects::iterator it = FileObjects_.begin();
+	for(; it != FileObjects_.end(); it++) {
+		refptr<ZZipFileObject> object = (*it);
+		if(object->sPath_ == lpszPath) {
+			p = object;
+			break;
+		}
+	}
+	return p;
+}
+
+int64 ZZipFile::ReadData( const ZZipFileObject* zzipfile, uint64 offset, void* lpBuffer, uint64 size )
+{
+	ATLASSERT((zzipfile != NULL)&&(lpBuffer != NULL) && (size > 0) );
+	if(StreamReader_.good()) {
+		if((zzipfile->FileItem_.offset>0) && ((offset >= 0) && (offset < zzipfile->FileItem_.namelen) )) {
+			uint64 fileoffset = zzipfile->FileItem_.offset+offset;
+			uint64 readsize = size;
+			if(readsize + offset > zzipfile->FileItem_.namelen) {
+				readsize = zzipfile->FileItem_.namelen - offset;
+			}
+
+			StreamReader_.seekg(fileoffset);
+			StreamReader_.read((char*)lpBuffer, readsize);
+			return StreamReader_.gcount();
+		}
+	}
+
+	return 0;
 }

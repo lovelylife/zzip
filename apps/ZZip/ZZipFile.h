@@ -51,7 +51,7 @@ public:
 	void Close();
 
 // 添加文件夹
-	bool AddFolder(const tstring& sZZipPath, const tstring& sLocalFolder);
+	bool AddFolder(tstring sZZipPath, tstring sLocalFolder);
 
 // 添加文件
 	bool AddFile(const tstring& sZZipPath, const tstring& sLocalFileName);
@@ -62,19 +62,19 @@ public:
 // 重命名
 	bool RenameFile(const tstring& sOldPath, const tstring& sNewPath);
 
-// 通过路径查找并提取文件
-	bool ExtractFile(const tstring& lpszPath);
+// 通过路径查找文件
+	const ZZipFileObject* Find(const tstring& lpszPath);
+
+// 读取指定ZZipFileObject的数据， 并返回读取数据的大小
+	int64 ReadData(const ZZipFileObject* zzipfile, uint64 offset, void* lpBuffer, uint64 size);
 
 protected:
 	
 	
 private:
-	bool ParseFileHeader();
-
-private:
 	ZZipFileHeader	ZZipFileHeader_;
 	ZZipFileObjects FileObjects_;
-	std::ifstream FileStreamReader_;
+	std::ifstream StreamReader_;
 	tstring sZZipFileName_;
 };
 
