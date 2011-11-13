@@ -26,12 +26,19 @@ bool ZZipApp::run(int argc, TCHAR* argv[]) {
 	ZZipFile zzip;
 	if(argc <= 1) { return 0; }
 	if(zzip.Open(argv[1])) {
-//		zzip.AddFolder(_T("/"), _T("E:\\test"));
+		zzip.AddFolder(_T("/"), _T("D:\\test"));
 		zzip.AddFile(_T("/1.txt"), _T("C:\\1.txt"));
 		zzip.AddFile(_T("/2.txt"), _T("C:\\2.txt"));
 		zzip.AddFile(_T("/3.txt"), _T("C:\\3.txt"));
 		zzip.AddFile(_T("/4.gif"), _T("C:\\4.gif"));
 		zzip.Save();
+		zzip.Close();
+	}
+
+	if(zzip.Open(argv[1])) {
+		const ZZipFileObject* p = zzip.Find(_T("/4.gif"));
+		char buffer[1024] = {0};
+		zzip.ReadData(p, 0, (void*)buffer, sizeof(buffer));
 		zzip.Close();
 	}
 	

@@ -98,7 +98,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="apps\ZZip\DirHelper.cc" />
+    <ClCompile Include="apps\ZZip\ZZipPathHelper.cc" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="study.cc" />
     <ClCompile Include="base\atomicops_internals_x86_gcc.cc" />
