@@ -14,15 +14,20 @@ ZZipApp::~ZZipApp() {}
 
 // public
 bool ZZipApp::run(int argc, TCHAR* argv[]) {
+
 	bool bRet = true; // base::framework::IApplication::run();
 	// TODO:
 	// do something
 	std::cout << "ZZipApp is running" << std::endl;
 	wchar_t WCharString[] = {0xff,0x22,0xad,0x33,0x00};
 	tstring sString = _T("abcdefghijklmn");
-	std::cout << wcslen(WCharString) << std::endl;
-	std::cout << sString.size() << std::endl;
+	sString.append(1, _T('\0'));
+	sString.append(1, _T('\0'));
+	sString.append(1, _T('\0'));
+	std::cout << wcslen(sString.c_str()) << std::endl;
 
+	std::cout << sString.size() << std::endl;
+	std::cout << sizeof(ZZipFileItem) << std::endl;
 	ZZipFile zzip;
 	if(argc <= 1) { return 0; }
 	if(zzip.Open(argv[1])) {
