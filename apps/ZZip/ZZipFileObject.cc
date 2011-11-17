@@ -35,7 +35,32 @@ bool ZZipFileObject::ZZipPathFromPath( const tstring& sPath) {
 	return false;
 }
 
-bool ZZipFileObject::IsFolder()
+bool ZZipFileObject::isfolder()
 {
 	return (sPath_.find_last_of(_T('/')) == (sPath_.size()-1));
+}
+
+uint64 ZZipFileObject::filesize() const
+{
+	return FileItem_.filesize;
+}
+
+tstring ZZipFileObject::path() const
+{
+	return sPath_;
+}
+
+tstring ZZipFileObject::localpath() const
+{
+	return sLocalPath_;
+}
+
+int32 ZZipFileObject::createtime() const
+{
+	return FileItem_.createtime;
+}
+
+int32 ZZipFileObject::lastmodify() const
+{
+	return FileItem_.lastmodify;
 }

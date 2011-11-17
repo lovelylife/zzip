@@ -37,7 +37,7 @@ bool ZZipFile::Open( const tstring& sFileName ) {
 	sZZipFileName_ = sFileName;
 	if(sFileName.empty() ) return false;
 	if(StreamReader_.is_open()) { Close(); }
-	StreamReader_.open(sFileName.c_str(), std::ios::binary);
+	StreamReader_.open(sFileName.c_str(), std::ios::in|std::ios::binary);
 	if(!StreamReader_.good()) {
 		std::cout << "Open file " << CT2A(sFileName.c_str()) << " error." << std::endl;
 		return false;
@@ -60,13 +60,12 @@ bool ZZipFile::Open( const tstring& sFileName ) {
 	}		
 
 	// 读取文件头部分
-	StreamReader_.seekg(0);
+	StreamReader_.seekg(0, std::ios::beg);
 	StreamReader_.read((char*)&hdr, sizeof(ZZipFileHeader));
 
 	// 读取目录结构
 	StreamReader_.seekg(hdr.offset, std::ios::beg);
 	{
-
 		char buffer[1024] = {0};
 		std::streamsize size = 0;
 		std::streamsize restsize = filesize - hdr.offset;
@@ -89,15 +88,15 @@ bool ZZipFile::Open( const tstring& sFileName ) {
 				size -= StreamReader_.gcount();
 				restsize -= StreamReader_.gcount(); 
 			}
-
-			FileObjectPtr->ZZipPathFromPath(tstring(CA2T(sTemp.c_str())));
-			FileObjectPtr->AddRef();
-			FileObjects_.push_back(FileObjectPtr);
-			if(StreamReader_.eof()) {
-				break;
+			
+			// std::cout << "file position: " << StreamReader_.tellg() << std::endl;
+			if(!sTemp.empty()) {
+				FileObjectPtr->ZZipPathFromPath(tstring(CA2T(sTemp.c_str())));
+				FileObjectPtr->AddRef();
+				FileObjects_.push_back(FileObjectPtr);
 			}
-
-			if(restsize <= 0) {
+			
+			if(StreamReader_.eof() || (restsize <= 0)) {
 				break;
 			}
 		}
@@ -112,11 +111,10 @@ bool ZZipFile::Save()
 	tstring sTempFileName = sZZipFileName_;
 	sTempFileName += _T(".__zzip__");
 	std::ofstream writer;
-	writer.open(sTempFileName.c_str());
+	writer.open(sTempFileName.c_str(), std::ios::out|std::ios::binary);
 	if(!writer.good()) { return false; }
 
 	// 先移动文件头大小位置
-	std::cout << sizeof(ZZipFileHeader) << std::endl;
 	writer.seekp(sizeof(ZZipFileHeader), std::ios::beg);
 //	writer.seekp(sizeof(ZZipFileHeader));
 
@@ -126,10 +124,17 @@ bool ZZipFile::Save()
 	for(; it != FileObjects_.end(); it++) {
 		refptr<ZZipFileObject> zzipfile = (*it);
 		// 记录文件偏移量
-		zzipfile->FileItem_.offset = writer.tellp();
+		
 		// 读取本地文件
-		std::ifstream f(zzipfile->sLocalPath_.c_str(), std::ios::binary);
-		if(!f.good()) { continue; }
+		std::ifstream f(zzipfile->sLocalPath_.c_str(), std::ios::in|std::ios::binary);
+		if(!f.good()) { 
+			zzipfile->FileItem_.filesize = 0;
+			zzipfile->FileItem_.namelength = 0;
+			continue; 
+		}
+
+		zzipfile->FileItem_.offset = writer.tellp();
+		
 		// 计算文件大小
 		std::streamsize filesize = 0;
 		f.seekg(std::ios::beg, std::ios::end);
@@ -151,16 +156,23 @@ bool ZZipFile::Save()
 	ZZipFileHeader_.offset  = writer.tellp();
 	it = FileObjects_.begin();
 	char szPath[_MAX_PATH] = {0};
+	std::streamsize sizecount = 0;
+	std::string sBuffer;
 	// 写入目录结构
 	for(; it != FileObjects_.end(); it++) {
 		refptr<ZZipFileObject> zzipfile=(*it); 
 		//zzipfile->FileItem_.namelen = zzipfile->sPath_.size();
 		zzipfile->FileItem_.namelength = WideCharToMultiByte(CP_ACP, 0, zzipfile->sPath_.c_str(), wcslen(zzipfile->sPath_.c_str()), szPath, _MAX_PATH, NULL, NULL);
-		if(zzipfile->FileItem_.namelength < 1) { continue; }
+		if(zzipfile->FileItem_.namelength < 1) { 
+			continue; 
+		}
+		sizecount += zzipfile->FileItem_.namelength;
 		writer.write((const char*)&zzipfile->FileItem_, sizeof(ZZipFileItem));
 		writer.write(szPath, zzipfile->FileItem_.namelength );
+		//sBuffer.append((const char*)&zzipfile->FileItem_, sizeof(ZZipFileItem));
+		sBuffer.append(szPath, zzipfile->FileItem_.namelength );
 	}
-
+	std::cout << "archives size: " << sizecount << std::endl;
 	// 写文件头
 	writer.seekp(0, std::ios::beg);
 	writer.write((char*)&ZZipFileHeader_, sizeof(ZZipFileHeader));
@@ -318,7 +330,7 @@ int64 ZZipFile::ReadData( const ZZipFileObject* zzipfile, uint64 offset, void* l
 				readsize = zzipfile->FileItem_.namelength - offset;
 			}
 
-			StreamReader_.seekg(fileoffset);
+			StreamReader_.seekg(fileoffset, std::ios::beg);
 			StreamReader_.read((char*)lpBuffer, readsize);
 			return StreamReader_.gcount();
 		}
