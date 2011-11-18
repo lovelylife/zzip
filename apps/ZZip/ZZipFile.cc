@@ -116,7 +116,6 @@ bool ZZipFile::Save()
 
 	// 先移动文件头大小位置
 	writer.seekp(sizeof(ZZipFileHeader), std::ios::beg);
-//	writer.seekp(sizeof(ZZipFileHeader));
 
 	// 写入文件数据
 	char buffer[2048];
@@ -172,7 +171,7 @@ bool ZZipFile::Save()
 		//sBuffer.append((const char*)&zzipfile->FileItem_, sizeof(ZZipFileItem));
 		sBuffer.append(szPath, zzipfile->FileItem_.namelength );
 	}
-	std::cout << "archives size: " << sizecount << std::endl;
+//	std::cout << "archives size: " << sizecount << std::endl;
 	// 写文件头
 	writer.seekp(0, std::ios::beg);
 	writer.write((char*)&ZZipFileHeader_, sizeof(ZZipFileHeader));
@@ -271,13 +270,13 @@ bool ZZipFile::AddFolder( tstring sZZipPath, tstring sLocalFolder )
 
 	if ((hFile=_tfindfirst(_T("*.*"), &FileData)) != -1) {
 		do { 
-			//检查是不是目录 
-			//如果是,再检查是不是 . 或 .. 
-			//如果不是,进行迭代
-			if ((FileData.attrib & _A_SUBDIR)) { 
+			// 检查是不是目录 
+			// 如果是,再检查是不是 . 或 .. 
+			// 如果不是,进行迭代
+			if ((FileData.attrib & _A_SUBDIR)) {
 				if ((_tcscmp(FileData.name, _T(".")) != 0 )	
-					&& (_tcscmp(FileData.name, _T("..")) != 0)
-				) {
+					&& (_tcscmp(FileData.name, _T("..")) != 0)) 
+				{
 					tstring sSubDir=sLocalFolder;
 					sSubDir += FileData.name;
 					sSubDir.append(1, _T('/'));
@@ -323,11 +322,11 @@ int64 ZZipFile::ReadData( const ZZipFileObject* zzipfile, uint64 offset, void* l
 {
 	ATLASSERT((zzipfile != NULL)&&(lpBuffer != NULL) && (size > 0) );
 	if(StreamReader_.good()) {
-		if((zzipfile->FileItem_.offset>0) && ((offset >= 0) && (offset < zzipfile->FileItem_.namelength) )) {
+		if((zzipfile->FileItem_.offset>0) && ((offset >= 0) && (offset < zzipfile->FileItem_.filesize) )) {
 			uint64 fileoffset = zzipfile->FileItem_.offset+offset;
 			uint64 readsize = size;
-			if(readsize + offset > zzipfile->FileItem_.namelength) {
-				readsize = zzipfile->FileItem_.namelength - offset;
+			if(readsize + offset > zzipfile->FileItem_.filesize) {
+				readsize = zzipfile->FileItem_.filesize - offset;
 			}
 
 			StreamReader_.seekg(fileoffset, std::ios::beg);

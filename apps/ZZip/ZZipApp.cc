@@ -44,18 +44,19 @@ bool ZZipApp::run(int argc, TCHAR* argv[]) {
 	}
 
 	if(zzip.Open(argv[1])) {
-		// 读取文件保存到C:\\tt.gif
-		std::ofstream of(_T("C:\\tt.gif"), std::ios::out|std::ios::binary);
+		// 读取文件"/4.gif" 保存到 "C:\\tt.gif"
+		std::ofstream of(_T("C:\\tt.xml"), std::ios::out|std::ios::binary);
 		if(of.good()) {
-			const ZZipFileObject* p = zzip.Find(_T("/4.gif"));
+			const ZZipFileObject* p = zzip.Find(_T("/3.txt"));
 			char buffer[1024] = {0};
 			uint64 filesize = p->filesize();
 			uint64 startpos = 0;
 			uint64 fcount = filesize;
 			while(fcount > 0) {
-				uint64 ReadBytes = zzip.ReadData(p, 0, (void*)buffer, sizeof(buffer));
+				uint64 ReadBytes = zzip.ReadData(p, startpos, (void*)buffer, 1024);
 				if(ReadBytes > 0) {
 					fcount -= ReadBytes;
+					startpos += ReadBytes;
 					of.write(buffer, ReadBytes);
 				} else {
 					break;
