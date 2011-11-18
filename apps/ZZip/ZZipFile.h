@@ -65,7 +65,26 @@ public:
 // 通过路径查找文件
 	const ZZipFileObject* Find(const tstring& lpszPath);
 
-// 读取指定ZZipFileObject的数据， 并返回读取数据的大小
+// 读取指定ZZipFileObject的数据， 并返回读取数据的大小。提供这个方法的
+// 目的在于读取大文件（尽管这种情况出现的不是很平凡，但是不可避免）；
+// 因为无法申请足够的内存用于存储文件的内容，所以提供读写数据块的方式，
+// 解决大文件的存储。如果仅仅只是读取几百k或者几十k的文件，你可以直接
+// 申请相应的文件大小的内存(zzipobject.filesize()来获得)
+// 示例读取小文件(1-1024K不等)// 
+// 读取文件"/4.gif" 保存到 "C:\\tt.gif"
+// 	ZZipFile zzip;
+// 	zzip.Open(filename);
+// 	std::ofstream of(_T("C:\\tt.xml"), std::ios::out|std::ios::binary);
+// 	if(of.good()) {
+// 		const ZZipFileObject* p = zzip.Find(_T("/3.txt"));
+// 		if(p) {
+// 			uint64 filesize = p->filesize();
+// 			char *filebuffer = new char[filesize];
+// 			uint64 ReadBytes = zzip.ReadData(p, 0, (void*)buffer, filesize);
+// 		}
+// 		of.close();
+// 	}
+
 	int64 ReadData(const ZZipFileObject* zzipfile, uint64 offset, void* lpBuffer, uint64 size);
 
 protected:
