@@ -98,13 +98,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="apps\ZZip\ZZipPathHelper.cc" />
-    <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="study.cc" />
     <ClCompile Include="base\atomicops_internals_x86_gcc.cc" />
     <ClCompile Include="base\ref_counted.cc" />
-    <ClCompile Include="base\thread.cpp" />
-    <ClCompile Include="base\utils\urlparser.cc" />
+    <ClCompile Include="base\thread.cc" />
+    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="study.cc" />
     <ClCompile Include="apps\ZZip\ZZipApp.cc" />
     <ClCompile Include="apps\ZZip\ZZipCommand.cc" />
     <ClCompile Include="apps\ZZip\ZZipFile.cc" />
@@ -112,19 +110,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="base\application.h" />
-    <ClInclude Include="base\atomic_ref_count.h" />
-    <ClInclude Include="base\atomicops.h" />
-    <ClInclude Include="base\atomicops_internals_arm_gcc.h" />
-    <ClInclude Include="base\atomicops_internals_x86_gcc.h" />
-    <ClInclude Include="base\atomicops_internals_x86_macosx.h" />
-    <ClInclude Include="base\atomicops_internals_x86_msvc.h" />
-    <ClInclude Include="base\builder_config.h" />
-    <ClInclude Include="base\ref_counted.h" />
-    <ClInclude Include="base\thread.h" />
-    <ClInclude Include="base\typedefs.h" />
-    <ClInclude Include="base\utils\urlparser.h" />
-    <ClInclude Include="base\stream\istream.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />

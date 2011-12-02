@@ -1,4 +1,5 @@
 
+#include "stdafx.h"
 #include "typedefs.h"
 #include "ref_counted.h"
 #include <iostream>
@@ -10,15 +11,21 @@
 #include "ZZipFile.h"
 #include "ZZipCommand.h"
 
-ZZipFile::ZZipFile(void)
+ZZipFile::ZZipFile(void) 
+: StreamReaderPtr_(NULL)
 {
 	memset(&ZZipFileHeader_, 0, sizeof(ZZipFileHeader));
 	strncpy(ZZipFileHeader_.sig, ZZIP_SIG, ZZIP_SIG_LEN);
 }
 
-ZZipFile::~ZZipFile(void)
-{
-
+ZZipFile::~ZZipFile(void) {
+	if(StreamReaderPtr_ != NULL) {
+		if(StreamReaderPtr_->is_open()) {
+			StreamReaderPtr_->close();
+		}
+		delete StreamReaderPtr_;
+		StreamReaderPtr_ = NULL;
+	}
 	// 	ZZipFileObjects::iterator it = FileObjects_.begin();
 	// 	for(; it != FileObjects_.end(); it++) {
 	// 		(*it)->Release();
@@ -27,32 +34,38 @@ ZZipFile::~ZZipFile(void)
 	// 	FileObjects_.clear();
 }
 
-// public
-// int ZZip::Command( int argc, _TCHAR* argv[] ) {
-// 	ZZipCommand cmd(argc, argv);
-// 	return 0;
-// }
-
-bool ZZipFile::Open( const tstring& sFileName ) {
-	sZZipFileName_ = sFileName;
+bool ZZipFile::Open( const tstring& sFileName )  {
 	if(sFileName.empty() ) return false;
-	if(StreamReader_.is_open()) { Close(); }
-	StreamReader_.open(sFileName.c_str(), std::ios::in|std::ios::binary);
-	if(!StreamReader_.good()) {
+	if(StreamReaderPtr_ != NULL) {
+		delete StreamReaderPtr_;
+		StreamReaderPtr_ = NULL;
+	}
+
+	sZZipFileName_ = sFileName;
+	StreamReaderPtr_ = new std::ifstream;
+	StreamReaderPtr_->open(sFileName.c_str(), std::ios::in|std::ios::binary);
+	if(!StreamReaderPtr_->good()) {
 		std::cout << "Open file " << CT2A(sFileName.c_str()) << " error." << std::endl;
 		return false;
-	} 
+	}
 
 	std::cout << "Open file " << CT2A(sFileName.c_str()) << " success." << std::endl;
 
-	StreamReader_.seekg(0, std::ios::end);
-	uint64 filesize = StreamReader_.tellg();
-	
+	return ParseStream(StreamReaderPtr_);
+}
+
+bool ZZipFile::ParseStream( std::ifstream* pStream )
+{
+	if(pStream == NULL || (!pStream->good())) return false;
+	pStream->seekg(0, std::ios::end);
+	int64 filesize = pStream->tellg();
+
 	// 文件不为空且头部大小小于sizeof(ZZipFileHeader则是个无效的文件
 	if(filesize <= 0) {
 		// 空文件，不需要解析
 		return true;
 	}
+
 	ZZipFileHeader hdr = {0};
 	if(filesize < sizeof(ZZipFileHeader)) {
 		std::cout << "Invalid file data!" << std::endl;
@@ -60,53 +73,55 @@ bool ZZipFile::Open( const tstring& sFileName ) {
 	}		
 
 	// 读取文件头部分
-	StreamReader_.seekg(0, std::ios::beg);
-	StreamReader_.read((char*)&hdr, sizeof(ZZipFileHeader));
+	pStream->seekg(0, std::ios::beg);
+	pStream->read((char*)&hdr, sizeof(ZZipFileHeader));
 
 	// 读取目录结构
-	StreamReader_.seekg(hdr.offset, std::ios::beg);
+	pStream->seekg(hdr.offset, std::ios::beg);
 	{
 		char buffer[1024] = {0};
 		std::streamsize size = 0;
 		std::streamsize restsize = filesize - hdr.offset;
-		while((!StreamReader_.eof()) && restsize > 0) {
+		while((!pStream->eof()) && restsize > 0) {
 			refptr<ZZipFileObject> FileObjectPtr = new ZZipFileObject;
-			StreamReader_.read((char*)&FileObjectPtr->FileItem_, std::streamsize(sizeof(ZZipFileItem)));
+			pStream->read((char*)&FileObjectPtr->FileItem_, std::streamsize(sizeof(ZZipFileItem)));
 			restsize -= sizeof(ZZipFileItem);
 			// 读取路径
 			std::string sTemp;
 			size = FileObjectPtr->FileItem_.namelength;
 
-			while((size > 0) && (!StreamReader_.eof())) {
+			while((size > 0) && (!StreamReaderPtr_->eof())) {
 				if(size > sizeof(buffer)) {
-					StreamReader_.read(buffer, sizeof(buffer));
+					pStream->read(buffer, sizeof(buffer));
 				} else {
-					StreamReader_.read(buffer, size);
+					pStream->read(buffer, size);
 				}
-				if(!StreamReader_.gcount()) break;
-				sTemp.append(buffer, StreamReader_.gcount());
-				size -= StreamReader_.gcount();
-				restsize -= StreamReader_.gcount(); 
+				if(!pStream->gcount()) break;
+				sTemp.append(buffer, pStream->gcount());
+				size -= pStream->gcount();
+				restsize -= pStream->gcount(); 
 			}
-			
-			// std::cout << "file position: " << StreamReader_.tellg() << std::endl;
+
+			// std::cout << "file position: " << StreamReaderPtr_->tellg() << std::endl;
 			if(!sTemp.empty()) {
 				FileObjectPtr->ZZipPathFromPath(tstring(CA2T(sTemp.c_str())));
 				FileObjectPtr->AddRef();
 				FileObjects_.push_back(FileObjectPtr);
 			}
-			
-			if(StreamReader_.eof() || (restsize <= 0)) {
+
+			if(pStream->eof() || (restsize <= 0)) {
 				break;
 			}
 		}
 	}
+
 	return true;
 }
 
+
 // 保存文件
-bool ZZipFile::Save()
-{
+bool ZZipFile::Save() {
+	ATLASSERT(StreamReaderPtr_ != NULL);
 	// 在当前文件所在目录创建临时文件
 	tstring sTempFileName = sZZipFileName_;
 	sTempFileName += _T(".__zzip__");
@@ -156,7 +171,7 @@ bool ZZipFile::Save()
 	it = FileObjects_.begin();
 	char szPath[_MAX_PATH] = {0};
 	std::streamsize sizecount = 0;
-	std::string sBuffer;
+//	std::string sBuffer;
 	// 写入目录结构
 	for(; it != FileObjects_.end(); it++) {
 		refptr<ZZipFileObject> zzipfile=(*it); 
@@ -168,8 +183,6 @@ bool ZZipFile::Save()
 		sizecount += zzipfile->FileItem_.namelength;
 		writer.write((const char*)&zzipfile->FileItem_, sizeof(ZZipFileItem));
 		writer.write(szPath, zzipfile->FileItem_.namelength );
-		//sBuffer.append((const char*)&zzipfile->FileItem_, sizeof(ZZipFileItem));
-		sBuffer.append(szPath, zzipfile->FileItem_.namelength );
 	}
 //	std::cout << "archives size: " << sizecount << std::endl;
 	// 写文件头
@@ -177,7 +190,7 @@ bool ZZipFile::Save()
 	writer.write((char*)&ZZipFileHeader_, sizeof(ZZipFileHeader));
 
 	writer.close();
-	StreamReader_.close();
+	StreamReaderPtr_->close();
 
 	remove(CT2A(sZZipFileName_.c_str()));
 	// 使用当前名称
@@ -235,14 +248,15 @@ bool ZZipFile::AddFile( const tstring& sZZipPath, const tstring& sLocalFileName 
 
 void ZZipFile::Close()
 {
+	ATLASSERT(StreamReaderPtr_ != NULL);
 	ZZipFileObjects::iterator it = FileObjects_.begin();
 	for(; it != FileObjects_.end(); it++) {
 		(*it)->Release();
 	}
 	FileObjects_.clear();
-	StreamReader_.clear();
-	if(StreamReader_.is_open()) {
-		StreamReader_.close();		
+	StreamReaderPtr_->clear();
+	if(StreamReaderPtr_->is_open()) {
+		StreamReaderPtr_->close();		
 	}
 }
 
@@ -320,20 +334,29 @@ const ZZipFileObject* ZZipFile::Find( const tstring& lpszPath )
 
 int64 ZZipFile::ReadData( const ZZipFileObject* zzipfile, uint64 offset, void* lpBuffer, uint64 size )
 {
-	ATLASSERT((zzipfile != NULL)&&(lpBuffer != NULL) && (size > 0) );
-	if(StreamReader_.good()) {
+	ATLASSERT(StreamReaderPtr_ != NULL && (zzipfile != NULL)&&(lpBuffer != NULL) && (size > 0) );
+	// ATLASSERT((zzipfile != NULL)&&(lpBuffer != NULL) && (size > 0) );
+	if(StreamReaderPtr_->good()) {
 		if((zzipfile->FileItem_.offset>0) && ((offset >= 0) && (offset < zzipfile->FileItem_.filesize) )) {
-			uint64 fileoffset = zzipfile->FileItem_.offset+offset;
-			uint64 readsize = size;
-			if(readsize + offset > zzipfile->FileItem_.filesize) {
+			int64 fileoffset = zzipfile->FileItem_.offset+offset;
+			int64 readsize = size;
+			if((readsize + offset) > zzipfile->FileItem_.filesize) {
 				readsize = zzipfile->FileItem_.filesize - offset;
 			}
 
-			StreamReader_.seekg(fileoffset, std::ios::beg);
-			StreamReader_.read((char*)lpBuffer, readsize);
-			return StreamReader_.gcount();
+			StreamReaderPtr_->seekg(fileoffset, std::ios::beg);
+			StreamReaderPtr_->read((char*)lpBuffer, readsize);
+			return StreamReaderPtr_->gcount();
 		}
 	}
 
 	return 0;
 }
+
+bool ZZipFile::Attach( std::ifstream* pStream )
+{
+	ATLASSERT(StreamReaderPtr_ == NULL);
+	StreamReaderPtr_ = pStream;
+	return ParseStream(StreamReaderPtr_);
+}
+

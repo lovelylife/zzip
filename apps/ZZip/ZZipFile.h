@@ -1,6 +1,6 @@
 
-#ifndef __ZZIP_H__
-#define __ZZIP_H__
+#ifndef __ZZIPFILE_H__
+#define __ZZIPFILE_H__
 
 #pragma once
 
@@ -25,11 +25,9 @@
 
 #include <list>
 #include <fstream>
-#include "ZZipFile.h"
 #include "ZZipFileObject.h"
 
-
-class ZZipFile {
+class _EXT_CLASS ZZipFile {
 public:
 	typedef std::list<ZZipFileObject*>		ZZipFileObjects;
 
@@ -40,6 +38,9 @@ public:
 public: 
 // 处理命令行模式
 //	uint32 Command(int argc, TCHAR* argv[]);
+
+// 使用现有的ZZipFile文件流
+	bool Attach(std::ifstream* pStream);
 
 // 打开ZZip文件
 	bool Open(const tstring& lpszFileName );
@@ -80,6 +81,8 @@ public:
 // 			uint64 filesize = p->filesize();
 // 			char *filebuffer = new char[filesize];
 // 			uint64 ReadBytes = zzip.ReadData(p, 0, (void*)buffer, filesize);
+//			...
+//			delete filebuffer;
 // 		}
 // 		of.close();
 // 	}
@@ -87,11 +90,13 @@ public:
 
 protected:
 	
+private:
+	bool ParseStream(std::ifstream* pStream);
 	
 private:
 	ZZipFileHeader	ZZipFileHeader_;
 	ZZipFileObjects FileObjects_;
-	std::ifstream StreamReader_;
+	std::ifstream* StreamReaderPtr_;
 	tstring sZZipFileName_;
 };
 

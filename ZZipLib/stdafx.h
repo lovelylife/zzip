@@ -5,16 +5,15 @@
 
 #pragma once
 
+#include "targetver.h"
 
-#define WIN32_LEAN_AND_MEAN		// 从 Windows 头中排除极少使用的资料
 #include <stdio.h>
 #include <tchar.h>
 
 #ifdef _LIB
 #define _EXT_CLASS
 #else
-#define _EXT_CLASS _declspec(dllexport)
+#define _EXT_CLASS _declspec(dllimport)
 #endif
-
 
 // TODO: 在此处引用程序需要的其他头文件

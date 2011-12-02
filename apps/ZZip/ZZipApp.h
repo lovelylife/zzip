@@ -2,7 +2,7 @@
 #ifndef __ZZIPAPP_H__
 #define __ZZIPAPP_H__	
 
-#include "../../base/application.h"
+#include "application.h"
 
 struct event_base;
 
