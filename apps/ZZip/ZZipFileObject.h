@@ -7,7 +7,7 @@
 #include "ref_counted.h"
 #include "ZZip.h"
 
-class ZZipFileObject : public base::RefCountedThreadSafe<ZZipFileObject> {
+class _EXT_CLASS ZZipFileObject : public base::RefCountedThreadSafe<ZZipFileObject> {
 public:
 	ZZipFileObject();
 	~ZZipFileObject(void);

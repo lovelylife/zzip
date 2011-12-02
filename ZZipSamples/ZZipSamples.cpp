@@ -1,23 +1,12 @@
+// ZZipSamples.cpp : 定义控制台应用程序的入口点。
+//
 
-#include "application.h"
+#include "stdafx.h"
 #include <iostream>
-#include "ZZipApp.h"
-#include "ZZipFile.h"
-#include <vector>
-#include <algorithm>
-#include <string>
 
-// public
-ZZipApp::ZZipApp() {
 
-}
-
-// public
-ZZipApp::~ZZipApp() {}
-
-// public
-bool ZZipApp::run(int argc, TCHAR* argv[]) {
-
+int _tmain(int argc, _TCHAR* argv[])
+{
 	bool bRet = true;
 	// TODO:
 	// do something
@@ -45,9 +34,9 @@ bool ZZipApp::run(int argc, TCHAR* argv[]) {
 
 	if(zzip.Open(argv[1])) {
 		// 读取文件"/4.gif" 保存到 "C:\\tt.gif"
-		std::ofstream of(_T("C:\\tt.xml"), std::ios::out|std::ios::binary);
+		std::ofstream of(_T("C:\\tt.gif"), std::ios::out|std::ios::binary);
 		if(of.good()) {
-			const ZZipFileObject* p = zzip.Find(_T("/3.txt"));
+			const ZZipFileObject* p = zzip.Find(_T("/4.gif"));
 			char buffer[1024] = {0};
 			uint64 filesize = p->filesize();
 			uint64 startpos = 0;
@@ -66,15 +55,6 @@ bool ZZipApp::run(int argc, TCHAR* argv[]) {
 		}
 		zzip.Close();
 	}
-	
-	return bRet;
+	return 0;
 }
 
-// public
-bool ZZipApp::stop() {
-	bool bRet = true; // base::framework::IApplication::stop();
-	// TODO:
-	// do something
-	std::cout << "ZZipApp is stoped" << std::endl;
-	return bRet;
-}

@@ -1,4 +1,5 @@
 
+#include "stdafx.h"
 #include "ZZipFileObject.h"
 #include <atlbase.h>
 #include <algorithm>
