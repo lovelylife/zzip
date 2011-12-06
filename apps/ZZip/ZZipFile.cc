@@ -8,8 +8,16 @@
 #include <atlconv.h>
 #include <algorithm>
 #include <io.h>
+#include <strstream>
 #include "ZZipFile.h"
 #include "ZZipCommand.h"
+
+#ifdef _WIN32
+#include <shlwapi.h>
+
+#endif
+
+
 
 ZZipFile::ZZipFile(void) 
 : StreamReaderPtr_(NULL)
@@ -26,13 +34,39 @@ ZZipFile::~ZZipFile(void) {
 		delete StreamReaderPtr_;
 		StreamReaderPtr_ = NULL;
 	}
-	// 	ZZipFileObjects::iterator it = FileObjects_.begin();
-	// 	for(; it != FileObjects_.end(); it++) {
-	// 		(*it)->Release();
-	// 	}
-	// 
-	// 	FileObjects_.clear();
 }
+
+#ifdef _WIN32
+
+// bool ZZipFile::Open(HINSTANCE hInstance, const tstring& sType, unsigned int pszResourceName) {	
+// 	
+// 	ATLASSERT(StreamReaderPtr_ != NULL);
+// 
+// 	//定位我们的自定义资源，这里因为我们是从本模块定位资源，所以将句柄简单地置为NULL即可
+// 	HRSRC hRsrc = FindResource(hInstance, MAKEINTRESOURCE(pszResourceName), sType.c_str());
+// 	if (NULL == hRsrc) return false;
+// 
+// 	//获取资源的大小
+// 	DWORD dwSize = SizeofResource(hInstance, hRsrc); 
+// 	if (0 == dwSize) {
+// 		dwSize = ::GetLastError();
+// 		return false;
+// 	}
+// 	//加载资源
+// 	HGLOBAL hGlobal = LoadResource(hInstance, hRsrc); 
+// 	if (NULL == hGlobal)
+// 		return false;
+// 	//锁定资源
+// 	char* pBuffer = (char*)LockResource(hGlobal); 
+// 	if (NULL == pBuffer) return false;
+// 
+// // 	StreamReaderPtr_ = new std::strstream();
+// // 	StreamReaderPtr_->write(pBuffer,dwSize);
+// 	::FreeResource(hRsrc);
+// 	return ParseStream(StreamReaderPtr_);
+// }
+
+#endif
 
 bool ZZipFile::Open( const tstring& sFileName )  {
 	if(sFileName.empty() ) return false;
@@ -318,7 +352,7 @@ bool ZZipFile::AddFolder( tstring sZZipPath, tstring sLocalFolder )
 	return true;
 }
 
-const ZZipFileObject* ZZipFile::Find( const tstring& lpszPath )
+const ZZipFileObject* ZZipFile::FindFile( const tstring& lpszPath )
 {
 	ZZipFileObject* p = NULL;
 	ZZipFileObjects::iterator it = FileObjects_.begin();
@@ -358,5 +392,29 @@ bool ZZipFile::Attach( std::ifstream* pStream )
 	ATLASSERT(StreamReaderPtr_ == NULL);
 	StreamReaderPtr_ = pStream;
 	return ParseStream(StreamReaderPtr_);
+}
+
+void ZZipFile::Clear()
+{
+	ZZipFileObjects::iterator it = FileObjects_.begin();
+	for(; it != FileObjects_.end(); it++) {
+		(*it)->Release();
+	}
+	FileObjects_.clear();
+}
+
+bool ZZipFile::ExtractFile( const tstring& sZZipPath,IStream** pStream ) {
+	// 查找文件
+	const ZZipFileObject* p = FindFile(sZZipPath);
+	if(p && (p->filesize() > 0)) {
+		HGLOBAL hGlobal = GlobalAlloc(GMEM_MOVEABLE, p->filesize());
+		void* pData = GlobalLock(hGlobal);
+		StreamReaderPtr_->seekg(p->offset(), std::ios::beg);
+		StreamReaderPtr_->read((char*)pData, p->filesize());				
+		GlobalUnlock(hGlobal);
+		return (CreateStreamOnHGlobal(hGlobal, TRUE, pStream) == S_OK);
+	}
+
+	return false;
 }
 

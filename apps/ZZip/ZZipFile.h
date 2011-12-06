@@ -45,11 +45,18 @@ public:
 // 打开ZZip文件
 	bool Open(const tstring& lpszFileName );
 
+#ifdef _WIN32
+	bool Open(HINSTANCE hInstance, const tstring& sType, unsigned int pszResourceName);
+#endif
+
 // 保存ZZip文件
 	bool Save();
 
 // 关闭ZZip文件
 	void Close();
+
+// 清空所有文件
+	void Clear();
 
 // 添加文件夹
 	bool AddFolder(tstring sZZipPath, tstring sLocalFolder);
@@ -64,7 +71,7 @@ public:
 	bool RenameFile(const tstring& sOldPath, const tstring& sNewPath);
 
 // 通过路径查找文件
-	const ZZipFileObject* Find(const tstring& lpszPath);
+	const ZZipFileObject* FindFile(const tstring& lpszPath);
 
 // 读取指定ZZipFileObject的数据， 并返回读取数据的大小。提供这个方法的
 // 目的在于读取大文件（尽管这种情况出现的不是很平凡，但是不可避免）；
@@ -87,6 +94,9 @@ public:
 // 		of.close();
 // 	}
 	int64 ReadData(const ZZipFileObject* zzipfile, uint64 offset, void* lpBuffer, uint64 size);
+
+	// 读取文件到内存
+	bool ExtractFile(const tstring& sZZipPath,IStream** pStream);
 
 protected:
 	
