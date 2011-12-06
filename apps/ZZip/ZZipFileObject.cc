@@ -41,7 +41,12 @@ bool ZZipFileObject::isfolder()
 	return (sPath_.find_last_of(_T('/')) == (sPath_.size()-1));
 }
 
-uint64 ZZipFileObject::filesize() const
+int64 ZZipFileObject::offset() const
+{
+	return FileItem_.offset;
+}
+
+int64 ZZipFileObject::filesize() const
 {
 	return FileItem_.filesize;
 }

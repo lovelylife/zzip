@@ -201,7 +201,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
+						UsePrecompiledHeader="2"
 					/>
 				</FileConfiguration>
 			</File>

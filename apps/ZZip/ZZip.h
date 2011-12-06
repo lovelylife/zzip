@@ -6,12 +6,6 @@
 
 #include <typedefs.h>
 
-#ifdef _LIB
-#define _EXT_CLASS
-#else
-#define _EXT_CLASS _declspec(dllexport)
-#endif
-
 #define ZZIP_SIG "ZZip"
 #define ZZIP_SIG_LEN  4
 

@@ -14,7 +14,8 @@ public:
 
 	bool ZZipPathFromPath( const tstring& sPath);
 	bool isfolder();
-	uint64 filesize() const;
+	int64 offset() const;
+	int64 filesize() const;
 	tstring path() const;
 	tstring localpath() const;
 	int32 createtime() const;
