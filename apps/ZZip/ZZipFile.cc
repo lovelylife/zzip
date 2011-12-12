@@ -20,75 +20,74 @@
 
 
 ZZipFile::ZZipFile(void) 
-: StreamReaderPtr_(NULL)
+: StreamPtr_(NULL)
 {
 	memset(&ZZipFileHeader_, 0, sizeof(ZZipFileHeader));
 	strncpy(ZZipFileHeader_.sig, ZZIP_SIG, ZZIP_SIG_LEN);
 }
 
 ZZipFile::~ZZipFile(void) {
-	if(StreamReaderPtr_ != NULL) {
-		if(StreamReaderPtr_->is_open()) {
-			StreamReaderPtr_->close();
-		}
-		delete StreamReaderPtr_;
-		StreamReaderPtr_ = NULL;
+	if(StreamPtr_ != NULL) {
+		delete StreamPtr_;
+		StreamPtr_ = NULL;
 	}
 }
 
 #ifdef _WIN32
 
-// bool ZZipFile::Open(HINSTANCE hInstance, const tstring& sType, unsigned int pszResourceName) {	
-// 	
-// 	ATLASSERT(StreamReaderPtr_ != NULL);
-// 
-// 	//定位我们的自定义资源，这里因为我们是从本模块定位资源，所以将句柄简单地置为NULL即可
-// 	HRSRC hRsrc = FindResource(hInstance, MAKEINTRESOURCE(pszResourceName), sType.c_str());
-// 	if (NULL == hRsrc) return false;
-// 
-// 	//获取资源的大小
-// 	DWORD dwSize = SizeofResource(hInstance, hRsrc); 
-// 	if (0 == dwSize) {
-// 		dwSize = ::GetLastError();
-// 		return false;
-// 	}
-// 	//加载资源
-// 	HGLOBAL hGlobal = LoadResource(hInstance, hRsrc); 
-// 	if (NULL == hGlobal)
-// 		return false;
-// 	//锁定资源
-// 	char* pBuffer = (char*)LockResource(hGlobal); 
-// 	if (NULL == pBuffer) return false;
-// 
-// // 	StreamReaderPtr_ = new std::strstream();
-// // 	StreamReaderPtr_->write(pBuffer,dwSize);
-// 	::FreeResource(hRsrc);
-// 	return ParseStream(StreamReaderPtr_);
-// }
+bool ZZipFile::Open(HINSTANCE hInstance, const tstring& sType, unsigned int pszResourceName) {	
+	
+	ATLASSERT(StreamPtr_ != NULL);
+
+	//定位我们的自定义资源，这里因为我们是从本模块定位资源，所以将句柄简单地置为NULL即可
+	HRSRC hRsrc = FindResource(hInstance, MAKEINTRESOURCE(pszResourceName), sType.c_str());
+	if (NULL == hRsrc) return false;
+
+	//获取资源的大小
+	DWORD dwSize = SizeofResource(hInstance, hRsrc); 
+	if (0 == dwSize) {
+		dwSize = ::GetLastError();
+		return false;
+	}
+	//加载资源
+	HGLOBAL hGlobal = LoadResource(hInstance, hRsrc); 
+	if (NULL == hGlobal)
+		return false;
+	//锁定资源
+	char* pBuffer = (char*)LockResource(hGlobal); 
+	if (NULL == pBuffer) return false;
+
+// 	StreamReaderPtr_ = new std::strstream();
+// 	StreamReaderPtr_->write(pBuffer,dwSize);
+	::FreeResource(hRsrc);
+	return Parse(StreamPtr_);
+}
 
 #endif
 
 bool ZZipFile::Open( const tstring& sFileName )  {
 	if(sFileName.empty() ) return false;
-	if(StreamReaderPtr_ != NULL) {
-		delete StreamReaderPtr_;
-		StreamReaderPtr_ = NULL;
+	if(StreamPtr_ != NULL) {
+		delete StreamPtr_;
+		StreamPtr_ = NULL;
 	}
 
 	sZZipFileName_ = sFileName;
-	StreamReaderPtr_ = new std::ifstream;
-	StreamReaderPtr_->open(sFileName.c_str(), std::ios::in|std::ios::binary);
-	if(!StreamReaderPtr_->good()) {
+	
+	StreamPtr_ = new std::fstream;
+	std::fstream* ZZipFileStreamPtr = (std::fstream*)StreamPtr_;
+	ZZipFileStreamPtr->open(sFileName.c_str(), std::ios::in|std::ios::binary);
+	if(!StreamPtr_->good()) {
 		std::cout << "Open file " << CT2A(sFileName.c_str()) << " error." << std::endl;
 		return false;
 	}
 
 	std::cout << "Open file " << CT2A(sFileName.c_str()) << " success." << std::endl;
 
-	return ParseStream(StreamReaderPtr_);
+	return Parse(StreamPtr_);
 }
 
-bool ZZipFile::ParseStream( std::ifstream* pStream )
+bool ZZipFile::Parse( std::iostream* pStream )
 {
 	if(pStream == NULL || (!pStream->good())) return false;
 	pStream->seekg(0, std::ios::end);
@@ -124,7 +123,7 @@ bool ZZipFile::ParseStream( std::ifstream* pStream )
 			std::string sTemp;
 			size = FileObjectPtr->FileItem_.namelength;
 
-			while((size > 0) && (!StreamReaderPtr_->eof())) {
+			while((size > 0) && (!StreamPtr_->eof())) {
 				if(size > sizeof(buffer)) {
 					pStream->read(buffer, sizeof(buffer));
 				} else {
@@ -155,7 +154,7 @@ bool ZZipFile::ParseStream( std::ifstream* pStream )
 
 // 保存文件
 bool ZZipFile::Save() {
-	ATLASSERT(StreamReaderPtr_ != NULL);
+	ATLASSERT(StreamPtr_ != NULL);
 	// 在当前文件所在目录创建临时文件
 	tstring sTempFileName = sZZipFileName_;
 	sTempFileName += _T(".__zzip__");
@@ -222,9 +221,7 @@ bool ZZipFile::Save() {
 	// 写文件头
 	writer.seekp(0, std::ios::beg);
 	writer.write((char*)&ZZipFileHeader_, sizeof(ZZipFileHeader));
-
 	writer.close();
-	StreamReaderPtr_->close();
 
 	remove(CT2A(sZZipFileName_.c_str()));
 	// 使用当前名称
@@ -282,16 +279,13 @@ bool ZZipFile::AddFile( const tstring& sZZipPath, const tstring& sLocalFileName 
 
 void ZZipFile::Close()
 {
-	ATLASSERT(StreamReaderPtr_ != NULL);
+	ATLASSERT(StreamPtr_ != NULL);
 	ZZipFileObjects::iterator it = FileObjects_.begin();
 	for(; it != FileObjects_.end(); it++) {
 		(*it)->Release();
 	}
 	FileObjects_.clear();
-	StreamReaderPtr_->clear();
-	if(StreamReaderPtr_->is_open()) {
-		StreamReaderPtr_->close();		
-	}
+	StreamPtr_->clear();
 }
 
 bool ZZipFile::AddFolder( tstring sZZipPath, tstring sLocalFolder )
@@ -368,9 +362,9 @@ const ZZipFileObject* ZZipFile::FindFile( const tstring& lpszPath )
 
 int64 ZZipFile::ReadData( const ZZipFileObject* zzipfile, uint64 offset, void* lpBuffer, uint64 size )
 {
-	ATLASSERT(StreamReaderPtr_ != NULL && (zzipfile != NULL)&&(lpBuffer != NULL) && (size > 0) );
+	ATLASSERT(StreamPtr_ != NULL && (zzipfile != NULL)&&(lpBuffer != NULL) && (size > 0) );
 	// ATLASSERT((zzipfile != NULL)&&(lpBuffer != NULL) && (size > 0) );
-	if(StreamReaderPtr_->good()) {
+	if(StreamPtr_->good()) {
 		if((zzipfile->FileItem_.offset>0) && ((offset >= 0) && (offset < zzipfile->FileItem_.filesize) )) {
 			int64 fileoffset = zzipfile->FileItem_.offset+offset;
 			int64 readsize = size;
@@ -378,20 +372,20 @@ int64 ZZipFile::ReadData( const ZZipFileObject* zzipfile, uint64 offset, void* l
 				readsize = zzipfile->FileItem_.filesize - offset;
 			}
 
-			StreamReaderPtr_->seekg(fileoffset, std::ios::beg);
-			StreamReaderPtr_->read((char*)lpBuffer, readsize);
-			return StreamReaderPtr_->gcount();
+			StreamPtr_->seekg(fileoffset, std::ios::beg);
+			StreamPtr_->read((char*)lpBuffer, readsize);
+			return StreamPtr_->gcount();
 		}
 	}
 
 	return 0;
 }
 
-bool ZZipFile::Attach( std::ifstream* pStream )
+bool ZZipFile::Attach( std::iostream* pStream )
 {
-	ATLASSERT(StreamReaderPtr_ == NULL);
-	StreamReaderPtr_ = pStream;
-	return ParseStream(StreamReaderPtr_);
+	ATLASSERT(StreamPtr_ == NULL);
+	StreamPtr_ = pStream;
+	return Parse(StreamPtr_);
 }
 
 void ZZipFile::Clear()
@@ -409,8 +403,8 @@ bool ZZipFile::ExtractFile( const tstring& sZZipPath,IStream** pStream ) {
 	if(p && (p->filesize() > 0)) {
 		HGLOBAL hGlobal = GlobalAlloc(GMEM_MOVEABLE, p->filesize());
 		void* pData = GlobalLock(hGlobal);
-		StreamReaderPtr_->seekg(p->offset(), std::ios::beg);
-		StreamReaderPtr_->read((char*)pData, p->filesize());				
+		StreamPtr_->seekg(p->offset(), std::ios::beg);
+		StreamPtr_->read((char*)pData, p->filesize());				
 		GlobalUnlock(hGlobal);
 		return (CreateStreamOnHGlobal(hGlobal, TRUE, pStream) == S_OK);
 	}

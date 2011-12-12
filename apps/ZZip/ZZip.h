@@ -14,7 +14,8 @@ typedef struct  {
 	char	sig[ZZIP_SIG_LEN];	// 头部标识
 	uint32	version;			// 文件版本
 	int64	options;			// 文件选项标识
-	int64	offset;			// 文件目录结构偏移量，结束位置为文件末尾
+	int64	offset;				// 文件目录结构偏移量，结束位置为文件末尾
+	int32	extendsize;			// 扩展部分长度
 } ZZipFileHeader;
 
 typedef struct {
