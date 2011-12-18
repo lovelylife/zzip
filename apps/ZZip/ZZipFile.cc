@@ -17,10 +17,15 @@
 
 #endif
 
+static const TCHAR ZZipTmpFileName[]	= _T(".__zzip__");
+static const TCHAR ZZipTmpFolderName[]  = _T("\\__zzip_cache\\");
 
 
 ZZipFile::ZZipFile(void) 
 : StreamPtr_(NULL)
+, StreamWriterPtr_(NULL)
+, Type_(TypeUnknow)
+, OpenMode_(OpenMode_|OpenModeWrite)
 {
 	memset(&ZZipFileHeader_, 0, sizeof(ZZipFileHeader));
 	strncpy(ZZipFileHeader_.sig, ZZIP_SIG, ZZIP_SIG_LEN);
@@ -37,7 +42,13 @@ ZZipFile::~ZZipFile(void) {
 
 bool ZZipFile::Open(HINSTANCE hInstance, const tstring& sType, unsigned int pszResourceName) {	
 	
-	ATLASSERT(StreamPtr_ != NULL);
+	ATLASSERT(StreamPtr_ == NULL);
+
+	// 从资源读取的数据，只读模式，因为不能进行写操作
+	OpenMode_ = OpenModeRead;
+
+    // 流类型，非文件类型
+	Type_ = TypeStream;
 
 	//定位我们的自定义资源，这里因为我们是从本模块定位资源，所以将句柄简单地置为NULL即可
 	HRSRC hRsrc = FindResource(hInstance, MAKEINTRESOURCE(pszResourceName), sType.c_str());
@@ -57,32 +68,65 @@ bool ZZipFile::Open(HINSTANCE hInstance, const tstring& sType, unsigned int pszR
 	char* pBuffer = (char*)LockResource(hGlobal); 
 	if (NULL == pBuffer) return false;
 
-// 	StreamReaderPtr_ = new std::strstream();
-// 	StreamReaderPtr_->write(pBuffer,dwSize);
+ 	StreamPtr_ = new std::strstream();
+ 	StreamPtr_->write(pBuffer,dwSize);
 	::FreeResource(hRsrc);
 	return Parse(StreamPtr_);
 }
 
 #endif
 
-bool ZZipFile::Open( const tstring& sFileName )  {
-	if(sFileName.empty() ) return false;
-	if(StreamPtr_ != NULL) {
-		delete StreamPtr_;
-		StreamPtr_ = NULL;
-	}
+bool ZZipFile::Open( const tstring& sFileName, int OpenMode)  {
 
+	ATLASSERT(StreamPtr_ == NULL);
+	if(sFileName.empty() ) return false;
+
+	// 保存ZZip文件名
 	sZZipFileName_ = sFileName;
 	
+	// 打开模式
+	OpenMode_ = OpenMode;
+	std::fstream::openmode StreamOpenMode = std::fstream::binary;
+	if(OpenMode_ & OpenModeRead) {
+		StreamOpenMode = StreamOpenMode | std::fstream::in;
+	}
+
+	if(OpenMode_ & OpenModeWrite) {
+		StreamOpenMode = StreamOpenMode | std::fstream::out;
+	}
+
 	StreamPtr_ = new std::fstream;
 	std::fstream* ZZipFileStreamPtr = (std::fstream*)StreamPtr_;
-	ZZipFileStreamPtr->open(sFileName.c_str(), std::ios::in|std::ios::binary);
-	if(!StreamPtr_->good()) {
-		std::cout << "Open file " << CT2A(sFileName.c_str()) << " error." << std::endl;
+	
+	ZZipFileStreamPtr->open(sFileName.c_str(), StreamOpenMode);
+	if(StreamPtr_->fail()) {
+		std::cout << "[ZZip]Open file " << CT2A(sFileName.c_str()) << " error." << std::endl;
 		return false;
 	}
 
-	std::cout << "Open file " << CT2A(sFileName.c_str()) << " success." << std::endl;
+	// 如果文件可写，则在当前文件所在目录创建临时文件
+	if((OpenMode_ & OpenModeWrite)) {
+		
+		tstring sTempFileName = sZZipFileName_;
+		sTempFileName += _T(".__zzip__");
+
+		if(StreamWriterPtr_ == NULL) {
+			StreamWriterPtr_ = new std::ofstream;
+			StreamWriterPtr_->open(sTempFileName.c_str(), std::ostream::out|std::ostream::binary|std::ostream::trunc);
+		}
+		
+		if(!StreamWriterPtr_->good()) { 
+			return false;
+		}
+
+		StreamWriterPtr_->clear();
+		StreamWriterPtr_->flush();
+	}
+
+	std::cout << "[ZZip]Open file " << CT2A(sFileName.c_str()) << " success." << std::endl;
+
+	OpenMode_ = OpenMode;
+	Type_     = TypeFile;
 
 	return Parse(StreamPtr_);
 }
@@ -154,16 +198,19 @@ bool ZZipFile::Parse( std::iostream* pStream )
 
 // 保存文件
 bool ZZipFile::Save() {
-	ATLASSERT(StreamPtr_ != NULL);
-	// 在当前文件所在目录创建临时文件
-	tstring sTempFileName = sZZipFileName_;
-	sTempFileName += _T(".__zzip__");
-	std::ofstream writer;
-	writer.open(sTempFileName.c_str(), std::ios::out|std::ios::binary);
-	if(!writer.good()) { return false; }
 
+	// 非文件类型不能进行文件保存操作
+	ATLASSERT(
+		(StreamPtr_ != NULL)
+		&& (Type_ == TypeFile) 
+		&& (OpenMode_ & OpenModeWrite)
+	);
+
+	// 无效的缓存文件
+	if(StreamWriterPtr_ == NULL) return false;
+	
 	// 先移动文件头大小位置
-	writer.seekp(sizeof(ZZipFileHeader), std::ios::beg);
+	StreamWriterPtr_->seekp(sizeof(ZZipFileHeader), std::ios::beg);
 
 	// 写入文件数据
 	char buffer[2048];
@@ -180,7 +227,7 @@ bool ZZipFile::Save() {
 			continue; 
 		}
 
-		zzipfile->FileItem_.offset = writer.tellp();
+		zzipfile->FileItem_.offset = StreamWriterPtr_->tellp();
 		
 		// 计算文件大小
 		std::streamsize filesize = 0;
@@ -193,14 +240,14 @@ bool ZZipFile::Save() {
 			memset(buffer, 0, sizeof(buffer));
 			f.read(buffer, sizeof(buffer));
 			std::streamsize ReadBytes = f.gcount();
-			writer.write(buffer, ReadBytes);
+			StreamWriterPtr_->write(buffer, ReadBytes);
 			filecount -= ReadBytes;
 		}
 		f.close();
 	}
 
 	// 设置文件目录结构位置
-	ZZipFileHeader_.offset  = writer.tellp();
+	ZZipFileHeader_.offset  = StreamWriterPtr_->tellp();
 	it = FileObjects_.begin();
 	char szPath[_MAX_PATH] = {0};
 	std::streamsize sizecount = 0;
@@ -214,16 +261,19 @@ bool ZZipFile::Save() {
 			continue; 
 		}
 		sizecount += zzipfile->FileItem_.namelength;
-		writer.write((const char*)&zzipfile->FileItem_, sizeof(ZZipFileItem));
-		writer.write(szPath, zzipfile->FileItem_.namelength );
+		StreamWriterPtr_->write((const char*)&zzipfile->FileItem_, sizeof(ZZipFileItem));
+		StreamWriterPtr_->write(szPath, zzipfile->FileItem_.namelength );
 	}
 //	std::cout << "archives size: " << sizecount << std::endl;
 	// 写文件头
-	writer.seekp(0, std::ios::beg);
-	writer.write((char*)&ZZipFileHeader_, sizeof(ZZipFileHeader));
-	writer.close();
+	StreamWriterPtr_->seekp(0, std::ios::beg);
+	StreamWriterPtr_->write((char*)&ZZipFileHeader_, sizeof(ZZipFileHeader));
+	StreamWriterPtr_->close();
 
 	remove(CT2A(sZZipFileName_.c_str()));
+
+	tstring sTempFileName = sZZipFileName_;
+	sTempFileName += _T(".__zzip__");
 	// 使用当前名称
 	int nReturnCode = _trename(sTempFileName.c_str(), sZZipFileName_.c_str());
 
@@ -231,6 +281,7 @@ bool ZZipFile::Save() {
 		std::cout << "rename: error(code:" << nReturnCode << ")" <<  std::endl;
 		return false;
 	}
+
 	return true;
 }
 
@@ -249,33 +300,90 @@ refptr<ZZipFileObject> ZZipFile::RemoveFile( const tstring& sZZipPath )
 	return object;
 }
 
-bool ZZipFile::AddFile( const tstring& sZZipPath, const tstring& sLocalFileName )
+refptr<ZZipFileObject> ZZipFile::AddFile( const tstring& sZZipPath, const tstring& sLocalFileName, bool bOverwrite )
 {
-	refptr<ZZipFileObject> new_object = new ZZipFileObject();
-	new_object->sLocalPath_ = sLocalFileName;
-	new_object->ZZipPathFromPath(sZZipPath);
+	refptr<ZZipFileObject> FileObjectPtr = FindFile(sZZipPath);
+	if(FileObjectPtr == NULL) {
+		FileObjectPtr = new ZZipFileObject();
 
-	// 检测是否存在该文件
-	bool bFileExists = false;
-	ZZipFileObjects::iterator it = FileObjects_.begin();
-	for(; it != FileObjects_.end(); it++) {
-		refptr<ZZipFileObject> object = (*it);
-		if(object->sPath_ == new_object->sPath_) {
-			// 文件已经存在
-			object->Release();
-			new_object->AddRef();
-			*it = new_object;
-			bFileExists = true;
-			break;
+		FileObjectPtr->sLocalPath_ = sLocalFileName;
+		FileObjectPtr->ZZipPathFromPath(sZZipPath);
+		FileObjectPtr->AddRef();
+		FileObjects_.push_back(FileObjectPtr.get());
+	} else {
+		if(bOverwrite) {
+			FileObjectPtr->ZZipPathFromPath(sZZipPath);
+			FileObjectPtr->sLocalPath_ = sLocalFileName;
 		}
 	}
-	
-	if(!bFileExists) {
-		new_object->AddRef();
-		FileObjects_.push_back(new_object);
-	}	
-	return true;
+
+	return FileObjectPtr;
 }
+
+
+#ifdef _WIN32
+refptr<ZZipFileObject> ZZipFile::AddFile(const tstring& sZZipPath, IStream* pStream, bool bOverwrite)
+{
+	ATLASSERT((OpenMode_ & OpenModeWrite) && (Type_ == TypeFile));
+
+	if(StreamWriterPtr_ == NULL) return NULL;
+
+	// 检查文件是否存在
+	refptr<ZZipFileObject> FileObjectPtr = FindFile(sZZipPath);
+	if(FileObjectPtr == NULL) {
+		FileObjectPtr = new ZZipFileObject;
+		FileObjectPtr->ZZipPathFromPath(sZZipPath);
+		FileObjectPtr->AddRef();
+		FileObjects_.push_back(FileObjectPtr.get());
+	} else {
+		if(!bOverwrite) {
+			return FileObjectPtr;
+		}
+	}
+
+
+
+	// 保存到临时文件
+	tstring sDir = sZZipFileName_;
+	PathRemoveFileSpec((LPTSTR)sDir.c_str());
+	sDir.insert(_tcslen(sDir.c_str()), ZZipTmpFolderName);
+	std::replace(sDir.begin(), sDir.end(), _T('/'), _T('\\'));
+	if(_taccess(sDir.c_str(), 0) == -1) {
+		if(0 != _tmkdir(sDir.c_str())){
+			// 创建文件夹失败
+			return NULL;
+		}
+	}
+	// 创建临时文件
+	TCHAR sTmpFileName[_MAX_PATH];
+	if(!GetTempFileName(sDir.c_str(), NULL, 0, sTmpFileName)) {
+		// GetLastError()
+		return NULL;
+	}
+
+	FileObjectPtr->ZZipPathFromPath(sZZipPath);
+	FileObjectPtr->sLocalPath_ = sTmpFileName;
+	
+	std::ofstream TempFileStream;
+	TempFileStream.open(sTmpFileName, std::ofstream::binary);
+	// 创建文件失败GetLastError
+	if(!TempFileStream.good()) {
+		return NULL;
+	}
+
+	//写文件内容
+	HGLOBAL hGlobal = NULL;
+	GetHGlobalFromStream(pStream, &hGlobal); // 获取 IStream 的内存句柄
+	SIZE_T size = GlobalSize(hGlobal);
+	
+	char* pBuffer = (char*)GlobalLock(hGlobal); 	
+	TempFileStream.write(pBuffer,static_cast<long>(size));
+	GlobalUnlock(hGlobal);
+
+	return FileObjectPtr;
+}
+
+#endif
 
 void ZZipFile::Close()
 {
@@ -346,9 +454,9 @@ bool ZZipFile::AddFolder( tstring sZZipPath, tstring sLocalFolder )
 	return true;
 }
 
-const ZZipFileObject* ZZipFile::FindFile( const tstring& lpszPath )
+refptr<ZZipFileObject> ZZipFile::FindFile( const tstring& lpszPath )
 {
-	ZZipFileObject* p = NULL;
+	refptr<ZZipFileObject> p;
 	ZZipFileObjects::iterator it = FileObjects_.begin();
 	for(; it != FileObjects_.end(); it++) {
 		refptr<ZZipFileObject> object = (*it);
@@ -357,6 +465,7 @@ const ZZipFileObject* ZZipFile::FindFile( const tstring& lpszPath )
 			break;
 		}
 	}
+
 	return p;
 }
 
