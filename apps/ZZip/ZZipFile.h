@@ -27,9 +27,17 @@
 #include <fstream>
 #include "ZZipFileObject.h"
 
+#ifndef ZZIP_Writer
+#define ZZIP_Writer
+#endif
+
+#ifndef ZZIP_Reader
+#define ZZIP_Reader
+#endif
+
+
 class _EXT_CLASS ZZipFile {
 public:
-  typedef std::list<ZZipFileObject*>		ZZipFileObjects;
 
   // 文件打开模式， OpenModeRead为只读，写函数则不会支持
   // OpenModeWrite即为写模式，读函数不支持， 可以使用‘|’
@@ -38,9 +46,11 @@ public:
   static const int OpenModeWrite		= 0x00000002;
 
   // zzip文件流的类型，默认为未知
-  static const int ZZipTypeUnknow		= 0;
-  static const int ZZipTypeStream		= 1;
-  static const int ZZipTypeFile			= 2;
+  static const int TypeUnknow			= 0;
+  static const int TypeStream			= 1;
+  static const int TypeFile				= 2;
+
+  typedef std::list<ZZipFileObject*>		ZZipFileObjects;
 
 public:
   // 标准构造函数
@@ -48,6 +58,7 @@ public:
   // 标准析构函数
   ~ZZipFile(void);
 
+// 方法
 public: 
   // 处理命令行模式
   // uint32 Command(int argc, TCHAR* argv[]);
@@ -56,35 +67,20 @@ public:
   bool Attach(std::iostream* pStream);
 
   // 打开ZZip文件
-  bool Open(const tstring& lpszFileName );
+  bool Open(const tstring& lpszFileName, int OpenMode = OpenModeRead|OpenModeWrite);
 
 #ifdef _WIN32
   bool Open(HINSTANCE hInstance, const tstring& sType, unsigned int pszResourceName);
 #endif
 
-  // 保存ZZip文件
-  bool Save();
-
   // 关闭ZZip文件
   void Close();
 
-  // 清空所有文件
-  void Clear();
-
-  // 添加文件夹
-  bool AddFolder(tstring sZZipPath, tstring sLocalFolder);
-
-  // 添加文件
-  bool AddFile(const tstring& sZZipPath, const tstring& sLocalFileName);
-
-  // 删除文件夹
-  refptr<ZZipFileObject> RemoveFile(const tstring& sZZipPath);
-
-  // 重命名
-  bool RenameFile(const tstring& sOldPath, const tstring& sNewPath);
+// 文件操作方法
+public:
 
   // 通过路径查找文件
-  const ZZipFileObject* FindFile(const tstring& lpszPath);
+  refptr<ZZipFileObject> FindFile(const tstring& lpszPath);
 
   // 读取指定ZZipFileObject的数据， 并返回读取数据的大小。提供这个方法的
   // 目的在于读取大文件（尽管这种情况出现的不是很平凡，但是不可避免）；
@@ -112,12 +108,39 @@ public:
   // 读取文件到内存
   bool ExtractFile(const tstring& sZZipPath,IStream** pStream);
 
+  // 保存ZZip文件
+  ZZIP_Writer bool Save();
+
+  // 清空所有文件
+  ZZIP_Writer void Clear();
+
+  // 添加文件夹
+  ZZIP_Writer bool AddFolder(tstring sZZipPath, tstring sLocalFolder);
+
+  // 添加文件
+  ZZIP_Writer refptr<ZZipFileObject> AddFile(const tstring& sZZipPath, const tstring& sLocalFileName, bool bOverwrite = true);
+
+#ifdef _WIN32
+  // 添加文件
+  ZZIP_Writer refptr<ZZipFileObject> AddFile(const tstring& sZZipPath, IStream* pStream, bool bOverwrite = true);
+#endif 
+  // 删除文件夹
+  ZZIP_Writer refptr<ZZipFileObject> RemoveFile(const tstring& sZZipPath);
+
+  // 重命名
+  ZZIP_Writer bool RenameFile(const tstring& sOldPath, const tstring& sNewPath);
+
 private:
+
   bool Parse(std::iostream* pStream);
 	
 private:
+
+  // 如果为空说明是字符流，否则为文件流
+  tstring sZZipFileName_;
+
   // ZZipFile文件头部，跟通常的文件一样，包含了文件的相关信息
-  ZZipFileHeader	ZZipFileHeader_;
+  ZZipFileHeader ZZipFileHeader_;
 
   // 文件对象列表
   ZZipFileObjects FileObjects_;
@@ -125,8 +148,20 @@ private:
   // 文件或者字符流
   std::iostream*  StreamPtr_;
 
-  // 如果为空说明是字符流，否则为文件流
-  tstring sZZipFileName_;
+  // 缓冲文件，最后将替换成ZZip文件，将原有的删除
+  std::ofstream*  StreamWriterPtr_;
+
+  // 已经写入数据的位置
+  std::streamsize OffsetBeginWriter_;
+
+  // ZZipFile流类型
+  int Type_;
+
+  // 读写类型
+  int OpenMode_;
+
+  // 错误代码
+  int ErrorCode_;
 
 };
 
