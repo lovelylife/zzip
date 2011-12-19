@@ -108,7 +108,7 @@ public:
   // 		of.close();
   // 	}
 
-  int64 ReadData(const ZZipFileObject* zzipfile, int64 offset, void* lpBuffer, uint64 size);
+  int64 ReadData(const ZZipFileObject* zzipfile, int64 offset, void* lpBuffer, int64 size);
 
   // 读取文件到内存
   bool ExtractFile(const tstring& sZZipPath,IStream** pStream);
@@ -128,6 +128,7 @@ public:
 #ifdef _WIN32
   // 添加文件
   ZZIP_Writer refptr<ZZipFileObject> AddFile(const tstring& sZZipPath, IStream* pStream, bool bOverwrite = true);
+
 #endif 
   // 删除文件夹
   ZZIP_Writer refptr<ZZipFileObject> RemoveFile(const tstring& sZZipPath);
@@ -139,6 +140,8 @@ private:
 
   bool Parse(std::iostream* pStream);
 	
+  // 删除本地文件夹
+  bool RemoveDir(tstring sLocalDir);
 private:
 
   // ZZipFile流类型
