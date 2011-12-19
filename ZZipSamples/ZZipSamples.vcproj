@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="ZZipSamples"
+	Name="ZZipLibSamples"
 	ProjectGUID="{B693B3D8-E123-48C9-A1EF-05F20EFE15D3}"
 	RootNamespace="ZZipSamples"
 	Keyword="Win32Proj"

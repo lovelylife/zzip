@@ -27,6 +27,10 @@
 #include <fstream>
 #include "ZZipFileObject.h"
 
+#ifdef _WIN32
+#include <objidl.h>
+#endif
+
 #ifndef ZZIP_Writer
 #define ZZIP_Writer
 #endif
@@ -78,9 +82,10 @@ public:
 
 // 文件操作方法
 public:
-
+  // 判断文件夹是否不存在
+  static bool PathIsInValid(const tstring& sPath);
   // 通过路径查找文件
-  refptr<ZZipFileObject> FindFile(const tstring& lpszPath);
+  refptr<ZZipFileObject> FindFile(const tstring& lpszZZipPath);
 
   // 读取指定ZZipFileObject的数据， 并返回读取数据的大小。提供这个方法的
   // 目的在于读取大文件（尽管这种情况出现的不是很平凡，但是不可避免）；
@@ -103,7 +108,7 @@ public:
   // 		of.close();
   // 	}
 
-  int64 ReadData(const ZZipFileObject* zzipfile, uint64 offset, void* lpBuffer, uint64 size);
+  int64 ReadData(const ZZipFileObject* zzipfile, int64 offset, void* lpBuffer, uint64 size);
 
   // 读取文件到内存
   bool ExtractFile(const tstring& sZZipPath,IStream** pStream);
@@ -136,24 +141,6 @@ private:
 	
 private:
 
-  // 如果为空说明是字符流，否则为文件流
-  tstring sZZipFileName_;
-
-  // ZZipFile文件头部，跟通常的文件一样，包含了文件的相关信息
-  ZZipFileHeader ZZipFileHeader_;
-
-  // 文件对象列表
-  ZZipFileObjects FileObjects_;
-
-  // 文件或者字符流
-  std::iostream*  StreamPtr_;
-
-  // 缓冲文件，最后将替换成ZZip文件，将原有的删除
-  std::ofstream*  StreamWriterPtr_;
-
-  // 已经写入数据的位置
-  std::streamsize OffsetBeginWriter_;
-
   // ZZipFile流类型
   int Type_;
 
@@ -162,6 +149,28 @@ private:
 
   // 错误代码
   int ErrorCode_;
+
+  // 文件或者字符流
+  std::iostream*  StreamPtr_;
+
+  // 缓冲文件，最后将替换成ZZip文件，将原有的删除
+  std::ofstream*  StreamWriterPtr_;
+
+  // 如果为空说明是字符流，否则为文件流
+  tstring sZZipFileName_;
+
+  // 临时缓存文件夹
+  tstring sCacheDir_;
+
+  // ZZipFile文件头部，跟通常的文件一样，包含了文件的相关信息
+  ZZipFileHeader ZZipFileHeader_;
+
+  // 文件对象列表
+  ZZipFileObjects FileObjects_;
+
+
+
+
 
 };
 

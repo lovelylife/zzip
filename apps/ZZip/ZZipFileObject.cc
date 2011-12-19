@@ -5,7 +5,7 @@
 #include <algorithm>
 
 ZZipFileObject::ZZipFileObject()
-: sPath_(_T(""))
+: sZZipPath_(_T(""))
 , sLocalPath_(_T(""))
 {
 	memset(&FileItem_, 0, sizeof(ZZipFileItem));
@@ -20,16 +20,16 @@ bool ZZipFileObject::ZZipPathFromPath( const tstring& sPath) {
 
 	// verify empty
 	if(!sPath.empty()) {
-		sPath_.clear();
+		sZZipPath_.clear();
 		// 检测目录,是否是"/"开头
 		if(sPath[0] == _T('/') || sPath[0] == _T('\\')) {
-			sPath_ = sPath;
+			sZZipPath_ = sPath;
 		} else {
-			sPath_.append(1, _T('/'));
-			sPath_.append(sPath);
+			sZZipPath_.append(1, _T('/'));
+			sZZipPath_.append(sPath);
 		}
 		// '\' -> '/'
-		std::replace(sPath_.begin(), sPath_.end(), _T('\\'), _T('/'));
+		std::replace(sZZipPath_.begin(), sZZipPath_.end(), _T('\\'), _T('/'));
 		return true;
 	}
 	
@@ -38,7 +38,7 @@ bool ZZipFileObject::ZZipPathFromPath( const tstring& sPath) {
 
 bool ZZipFileObject::isfolder()
 {
-	return (sPath_.find_last_of(_T('/')) == (sPath_.size()-1));
+	return (sZZipPath_.find_last_of(_T('/')) == (sZZipPath_.size()-1));
 }
 
 int64 ZZipFileObject::offset() const
@@ -53,7 +53,7 @@ int64 ZZipFileObject::filesize() const
 
 tstring ZZipFileObject::path() const
 {
-	return sPath_;
+	return sZZipPath_;
 }
 
 tstring ZZipFileObject::localpath() const
