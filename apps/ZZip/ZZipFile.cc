@@ -291,15 +291,17 @@ bool ZZipFile::Save() {
 	//如果存在缓存文件夹则应该删除掉
 	if(!PathIsInValid(sCacheDir_)) {
 		_trmdir(sCacheDir_.c_str());
-		sCacheDir_.clear();
 	}
 
 	// 删除修改前的ZZip文件，用临时缓冲文件覆盖
-	remove(CT2A(sZZipFileName_.c_str()));
+	((std::fstream*)StreamPtr_)->close();
+	::_tremove(sZZipFileName_.c_str());
+	// remove(CT2A(sZZipFileName_.c_str()));
 
 	tstring sTempFileName = sZZipFileName_;
 	sTempFileName += ZZipTmpFileName;
-
+	
+	
 	// 使用当前名称
 	int ReturnCode = _trename(sTempFileName.c_str(), sZZipFileName_.c_str());
 
@@ -422,8 +424,29 @@ void ZZipFile::Close()
 	for(; it != FileObjects_.end(); it++) {
 		(*it)->Release();
 	}
-	FileObjects_.clear();
-	StreamPtr_->clear();
+
+	//清理不需要的缓存目录和文件夹
+	//如果存在缓存文件夹则应该删除掉
+	if(!PathIsInValid(sCacheDir_)) {
+		_trmdir(sCacheDir_.c_str());
+		sCacheDir_.clear();
+	}
+
+	// 删除修改前的ZZip文件，用临时缓冲文件覆盖
+
+	if(((std::fstream*)StreamPtr_)->is_open()) {
+		StreamPtr_->clear();
+		((std::fstream*)StreamPtr_)->close();
+	}
+	
+	tstring sTempFileName = sZZipFileName_;
+	sTempFileName += ZZipTmpFileName;
+	
+	if(!PathIsInValid(sTempFileName)) {
+		_tremove(sTempFileName.c_str());
+	}
+
+	FileObjects_.clear();	
 
 	// 清理内存数据
 	if(StreamWriterPtr_) {
