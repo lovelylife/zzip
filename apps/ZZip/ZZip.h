@@ -25,7 +25,7 @@ typedef struct {
 	int32 options;			// 选项
 	int32 createtime;		// 创建时间
 	int32 lastmodify;		// 修改时间
-	uint32 namelength;		// 名称长度
+	int32 namelength;		// 名称长度
 	// char data[1];		// 路径和名称/密钥等等
 } ZZipFileItem;
 

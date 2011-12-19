@@ -290,7 +290,7 @@ bool ZZipFile::Save() {
 	//清理不需要的缓存目录和文件夹
 	//如果存在缓存文件夹则应该删除掉
 	if(!PathIsInValid(sCacheDir_)) {
-		_trmdir(sCacheDir_.c_str());
+		RemoveDir(sCacheDir_);
 	}
 
 	// 删除修改前的ZZip文件，用临时缓冲文件覆盖
@@ -425,39 +425,44 @@ void ZZipFile::Close()
 		(*it)->Release();
 	}
 
-	//清理不需要的缓存目录和文件夹
-	//如果存在缓存文件夹则应该删除掉
-	if(!PathIsInValid(sCacheDir_)) {
-		_trmdir(sCacheDir_.c_str());
-		sCacheDir_.clear();
-	}
+	
+	// 处理文件类型的关闭，需要清理一些临时缓冲文件和目录
+	if(Type_ == TypeFile) {
 
-	// 删除修改前的ZZip文件，用临时缓冲文件覆盖
+		//清理不需要的缓存目录和文件夹
+		//如果存在缓存文件夹则应该删除掉
+		if(!PathIsInValid(sCacheDir_)) {
+			RemoveDir(sCacheDir_);
+			sCacheDir_.clear();
+		}
 
-	if(((std::fstream*)StreamPtr_)->is_open()) {
-		StreamPtr_->clear();
-		((std::fstream*)StreamPtr_)->close();
+		// 删除修改前的ZZip文件，用临时缓冲文件覆盖
+		if(StreamWriterPtr_ && StreamWriterPtr_->is_open()) {
+			StreamWriterPtr_->close();
+			delete StreamWriterPtr_;
+			StreamWriterPtr_ = NULL;
+		}
+
+		tstring sTempFileName = sZZipFileName_;
+		sTempFileName += ZZipTmpFileName;
+
+		if(!PathIsInValid(sTempFileName)) {
+			_tremove(sTempFileName.c_str());
+		}
+
+
+		if(((std::fstream*)StreamPtr_)->is_open()) {
+			StreamPtr_->clear();
+			((std::fstream*)StreamPtr_)->close();
+		}
 	}
 	
-	tstring sTempFileName = sZZipFileName_;
-	sTempFileName += ZZipTmpFileName;
-	
-	if(!PathIsInValid(sTempFileName)) {
-		_tremove(sTempFileName.c_str());
-	}
-
-	FileObjects_.clear();	
-
-	// 清理内存数据
-	if(StreamWriterPtr_) {
-		delete StreamWriterPtr_;
-		StreamWriterPtr_ = NULL;
-	}
-
 	if(StreamPtr_) {
 		delete StreamPtr_;
 		StreamPtr_ = NULL;
 	}
+	
+	FileObjects_.clear();	
 }
 
 bool ZZipFile::AddFolder( tstring sZZipPath, tstring sLocalFolder )
@@ -533,7 +538,7 @@ refptr<ZZipFileObject> ZZipFile::FindFile( const tstring& lpszZZipPath )
 	return p;
 }
 
-int64 ZZipFile::ReadData( const ZZipFileObject* zzipfile, int64 offset, void* lpBuffer, uint64 size )
+int64 ZZipFile::ReadData( const ZZipFileObject* zzipfile, int64 offset, void* lpBuffer, int64 size )
 {
 	ATLASSERT(StreamPtr_ != NULL && (zzipfile != NULL)&&(lpBuffer != NULL) && (size > 0) );
 	// ATLASSERT((zzipfile != NULL)&&(lpBuffer != NULL) && (size > 0) );
@@ -583,6 +588,19 @@ bool ZZipFile::ExtractFile( const tstring& sZZipPath,IStream** pStream ) {
 	}
 
 	return false;
+}
+
+bool ZZipFile::RemoveDir( tstring sLocalDir )
+{
+	SHFILEOPSTRUCT sop; 
+	sop.wFunc = FO_DELETE;
+	TCHAR szDirNameBuffer[_MAX_PATH];
+	ZeroMemory(szDirNameBuffer, _MAX_PATH);
+	_tcsncpy(szDirNameBuffer, sLocalDir.c_str(), min(_tcslen(sLocalDir.c_str()), _MAX_PATH-2));
+	sop.pFrom	= szDirNameBuffer; 
+	sop.pTo		= NULL; 
+	sop.fFlags	= FOF_ALLOWUNDO|FOF_NOCONFIRMATION|FOF_SILENT|FOF_NOERRORUI;
+	return !SHFileOperation(&sop);
 }
 
 
