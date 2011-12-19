@@ -25,7 +25,7 @@ public:
 	friend class ZZipFile;
 private: 
 	ZZipFileItem FileItem_;
-	tstring sPath_;			// 路径
+	tstring sZZipPath_;			// 路径
 	tstring sLocalPath_;	// 本地路径，如果为空则为ZZip文件文具
 
 };

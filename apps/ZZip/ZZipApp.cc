@@ -1,8 +1,9 @@
 
+#include "stdafx.h"
 #include "application.h"
 #include <iostream>
-#include "ZZipApp.h"
 #include "ZZipFile.h"
+#include "ZZipApp.h"
 #include <vector>
 #include <algorithm>
 #include <string>
@@ -47,22 +48,25 @@ bool ZZipApp::run(int argc, TCHAR* argv[]) {
 		// 读取文件"/4.gif" 保存到 "C:\\tt.gif"
 		std::ofstream of(_T("C:\\tt.xml"), std::ios::out|std::ios::binary);
 		if(of.good()) {
-			const ZZipFileObject* p = zzip.Find(_T("/3.txt"));
-			char buffer[1024] = {0};
-			uint64 filesize = p->filesize();
-			uint64 startpos = 0;
-			uint64 fcount = filesize;
-			while(fcount > 0) {
-				uint64 ReadBytes = zzip.ReadData(p, startpos, (void*)buffer, 1024);
-				if(ReadBytes > 0) {
-					fcount -= ReadBytes;
-					startpos += ReadBytes;
-					of.write(buffer, ReadBytes);
-				} else {
-					break;
+			refptr<ZZipFileObject> FileObjectPtr = zzip.FindFile(_T("/3.txt"));
+			if(FileObjectPtr) {
+				char buffer[1024] = {0};
+				uint64 filesize = FileObjectPtr->filesize();
+				uint64 startpos = 0;
+				uint64 fcount = filesize;
+				while(fcount > 0) {
+					std::streamsize ReadBytes = zzip.ReadData(FileObjectPtr, startpos, (void*)buffer, 1024);
+					if(ReadBytes > 0) {
+						fcount -= ReadBytes;
+						startpos += ReadBytes;
+						of.write(buffer, ReadBytes);
+					} else {
+						break;
+					}
 				}
+				of.close();
 			}
-			of.close();
+			
 		}
 		zzip.Close();
 	}
