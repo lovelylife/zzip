@@ -14,11 +14,12 @@
 
 #ifdef _WIN32
 #include <shlwapi.h>
+#include <shellapi.h>
 
 #endif
 
 static const TCHAR ZZipTmpFileName[]	= _T(".__zzip__");
-static const TCHAR ZZipTmpFolderName[]  = _T("\\__zzip_cache\\");
+static const TCHAR ZZipTmpFolderName[]  = _T(".cache\\");
 
 bool ZZipFile::PathIsInValid(const tstring& sPath ) {
 	return (_taccess(sPath.c_str(), 0) == -1);
@@ -29,6 +30,7 @@ ZZipFile::ZZipFile(void)
 , StreamWriterPtr_(NULL)
 , Type_(TypeUnknow)
 , OpenMode_(OpenMode_|OpenModeWrite)
+, ErrorCode_(0)
 {
 	memset(&ZZipFileHeader_, 0, sizeof(ZZipFileHeader));
 	strncpy(ZZipFileHeader_.sig, ZZIP_SIG, ZZIP_SIG_LEN);
@@ -127,9 +129,8 @@ bool ZZipFile::Open( const tstring& sFileName, int OpenMode)  {
 	}
 
 	// 保存到临时文件
-	sCacheDir_ = sZZipFileName_;
-	PathRemoveFileSpec((LPTSTR)sCacheDir_.c_str());
-	sCacheDir_.insert(_tcslen(sCacheDir_.c_str()), ZZipTmpFolderName);
+ 	sCacheDir_ = sZZipFileName_;
+	sCacheDir_ += ZZipTmpFolderName;
 	std::replace(sCacheDir_.begin(), sCacheDir_.end(), _T('/'), _T('\\'));
 
 	// 判断文件夹是否不存在
@@ -369,17 +370,9 @@ refptr<ZZipFileObject> ZZipFile::AddFile(const tstring& sZZipPath, IStream* pStr
 		}
 	}
 
-
-
-	// 保存到临时文件
-	tstring sDir = sZZipFileName_;
-	PathRemoveFileSpec((LPTSTR)sDir.c_str());
-	sDir.insert(_tcslen(sDir.c_str()), ZZipTmpFolderName);
-	std::replace(sDir.begin(), sDir.end(), _T('/'), _T('\\'));
-
 	// 判断文件夹是否存在
-	if(_taccess(sDir.c_str(), 0) == -1) {
-		if(0 != _tmkdir(sDir.c_str())){
+	if(PathIsInValid(sCacheDir_)) {
+		if(0 != _tmkdir(sCacheDir_.c_str())){
 			// 创建文件夹失败
 			return NULL;
 		}
@@ -387,7 +380,7 @@ refptr<ZZipFileObject> ZZipFile::AddFile(const tstring& sZZipPath, IStream* pStr
 
 	// 创建临时文件
 	TCHAR sTmpFileName[_MAX_PATH];
-	if(!GetTempFileName(sDir.c_str(), NULL, 0, sTmpFileName)) {
+	if(!GetTempFileName(sCacheDir_.c_str(), NULL, 0, sTmpFileName)) {
 		// GetLastError()
 		return NULL;
 	}
@@ -590,16 +583,17 @@ bool ZZipFile::ExtractFile( const tstring& sZZipPath,IStream** pStream ) {
 	return false;
 }
 
-bool ZZipFile::RemoveDir( tstring sLocalDir )
+bool ZZipFile::RemoveDir( const tstring& sLocalDir )
 {
-	SHFILEOPSTRUCT sop; 
+	SHFILEOPSTRUCT sop = {0}; 
 	sop.wFunc = FO_DELETE;
-	TCHAR szDirNameBuffer[_MAX_PATH];
+	TCHAR szDirNameBuffer[_MAX_PATH] = {0};
 	ZeroMemory(szDirNameBuffer, _MAX_PATH);
-	_tcsncpy(szDirNameBuffer, sLocalDir.c_str(), min(_tcslen(sLocalDir.c_str()), _MAX_PATH-2));
-	sop.pFrom	= szDirNameBuffer; 
+	_tcsncpy(szDirNameBuffer, sLocalDir.c_str(), min(_tcslen(sLocalDir.c_str())-1, _MAX_PATH-2));
+	sop.pFrom	= szDirNameBuffer;
 	sop.pTo		= NULL; 
 	sop.fFlags	= FOF_ALLOWUNDO|FOF_NOCONFIRMATION|FOF_SILENT|FOF_NOERRORUI;
+	sop.fAnyOperationsAborted=FALSE;
 	return !SHFileOperation(&sop);
 }
 

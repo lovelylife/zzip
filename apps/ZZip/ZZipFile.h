@@ -141,7 +141,7 @@ private:
   bool Parse(std::iostream* pStream);
 	
   // 删除本地文件夹
-  bool RemoveDir(tstring sLocalDir);
+  bool RemoveDir(const tstring& sLocalDir);
 private:
 
   // ZZipFile流类型
