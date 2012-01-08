@@ -411,7 +411,7 @@ refptr<ZZipFileObject> ZZipFile::AddFile(const tstring& sZZipPath, IStream* pStr
 
 void ZZipFile::Close()
 {
-	ATLASSERT(StreamPtr_ != NULL);
+	if(StreamPtr_ == NULL) return;
 
 	ZZipFileObjects::iterator it = FileObjects_.begin();
 	for(; it != FileObjects_.end(); it++) {
