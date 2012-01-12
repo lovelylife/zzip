@@ -80,6 +80,10 @@ public:
   // 关闭ZZip文件
   void Close();
 
+  bool IsGood() const ;
+
+  tstring FileName() const;
+
 // 文件操作方法
 public:
   // 判断文件夹是否不存在

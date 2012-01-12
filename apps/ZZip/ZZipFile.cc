@@ -597,4 +597,14 @@ bool ZZipFile::RemoveDir( const tstring& sLocalDir )
 	return !SHFileOperation(&sop);
 }
 
+bool ZZipFile::IsGood() const
+{
+	return StreamPtr_ && StreamPtr_->good();
+}
+
+tstring ZZipFile::FileName() const
+{
+	return sZZipFileName_;
+}
+
 
