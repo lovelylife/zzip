@@ -25,6 +25,7 @@
 
 #include <list>
 #include <fstream>
+#include "ZZipTree.h"
 #include "ZZipFileObject.h"
 
 #ifdef _WIN32
@@ -54,7 +55,20 @@ public:
   static const int TypeStream			= 1;
   static const int TypeFile				= 2;
 
+  static const int FilterModeFile		= 0x0001;
+  static const int FilterModeFolder		= 0x0002;
+  static const int FilterModeAll		= 0x0003;
+
   typedef std::list<ZZipFileObject*>		ZZipFileObjects;
+  
+  typedef bool (*EnumFileFunction)(void* arg, const int ftype, const tstring& sItem);
+
+  struct ZZipFileObjectNode {
+	  std::string sValue;
+	  RefPtr<ZZipFileObject> fileobject;
+  };
+
+  typedef zziptree<std::string, ZZipFileObject> ZZipFileTree;
 
 public:
   // 标准构造函数
@@ -88,8 +102,11 @@ public:
 public:
   // 判断文件夹是否不存在
   static bool PathIsInValid(const tstring& sPath);
+
+  void EnumItem(const tstring& sZZipFolderPath, int FilterMode , void* arg, EnumFileFunction lpfunc);
+
   // 通过路径查找文件
-  refptr<ZZipFileObject> FindFile(const tstring& lpszZZipPath);
+  RefPtr<ZZipFileObject> FindFile(const tstring& lpszZZipPath);
 
   // 读取指定ZZipFileObject的数据， 并返回读取数据的大小。提供这个方法的
   // 目的在于读取大文件（尽管这种情况出现的不是很平凡，但是不可避免）；
@@ -127,15 +144,15 @@ public:
   ZZIP_Writer bool AddFolder(tstring sZZipPath, tstring sLocalFolder);
 
   // 添加文件
-  ZZIP_Writer refptr<ZZipFileObject> AddFile(const tstring& sZZipPath, const tstring& sLocalFileName, bool bOverwrite = true);
+  ZZIP_Writer RefPtr<ZZipFileObject> AddFile(const tstring& sZZipPath, const tstring& sLocalFileName, bool bOverwrite = true);
 
 #ifdef _WIN32
   // 添加文件
-  ZZIP_Writer refptr<ZZipFileObject> AddFile(const tstring& sZZipPath, IStream* pStream, bool bOverwrite = true);
+  ZZIP_Writer RefPtr<ZZipFileObject> AddFile(const tstring& sZZipPath, IStream* pStream, bool bOverwrite = true);
 
 #endif 
   // 删除文件夹
-  ZZIP_Writer refptr<ZZipFileObject> RemoveFile(const tstring& sZZipPath);
+  ZZIP_Writer RefPtr<ZZipFileObject> RemoveFile(const tstring& sZZipPath);
 
   // 重命名
   ZZIP_Writer bool RenameFile(const tstring& sOldPath, const tstring& sNewPath);
@@ -175,9 +192,8 @@ private:
   // 文件对象列表
   ZZipFileObjects FileObjects_;
 
-
-
-
+  // 文件二叉树
+  ZZipFileTree FileObjectsTree_;
 
 };
 

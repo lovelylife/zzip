@@ -16,6 +16,9 @@
 #define _EXT_CLASS _declspec(dllimport)
 #endif
 
+#ifndef USING_TestCode
+#define USING_TestCode
+#endif
 
 #include "ZZipFile.h"
 
