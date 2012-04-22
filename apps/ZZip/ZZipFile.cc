@@ -1,7 +1,7 @@
 
 #include "stdafx.h"
-#include "typedefs.h"
-#include "ref_counted.h"
+#include "TypeDefines.h"
+#include "RefCounted.h"
 #include <iostream>
 #include <fstream>
 #include <atlbase.h>
@@ -178,7 +178,7 @@ bool ZZipFile::Parse( std::iostream* pStream )
 		std::streamsize size = 0;
 		std::streamsize restsize = filesize - hdr.offset;
 		while((!pStream->eof()) && restsize > 0) {
-			refptr<ZZipFileObject> FileObjectPtr = new ZZipFileObject;
+			RefPtr<ZZipFileObject> FileObjectPtr = new ZZipFileObject;
 			pStream->read((char*)&FileObjectPtr->FileItem_, std::streamsize(sizeof(ZZipFileItem)));
 			restsize -= sizeof(ZZipFileItem);
 			// 读取路径
@@ -234,7 +234,7 @@ bool ZZipFile::Save() {
 	char buffer[2048];
 	ZZipFileObjects::iterator it = FileObjects_.begin();
 	for(; it != FileObjects_.end(); it++) {
-		refptr<ZZipFileObject> zzipfile = (*it);
+		RefPtr<ZZipFileObject> zzipfile = (*it);
 		// 记录文件偏移量
 		
 		// 读取本地文件
@@ -272,7 +272,7 @@ bool ZZipFile::Save() {
 
 	// 写入目录结构
 	for(; it != FileObjects_.end(); it++) {
-		refptr<ZZipFileObject> zzipfile=(*it); 
+		RefPtr<ZZipFileObject> zzipfile=(*it); 
 		//zzipfile->FileItem_.namelen = zzipfile->sPath_.size();
 		zzipfile->FileItem_.namelength = WideCharToMultiByte(CP_ACP, 0, zzipfile->sZZipPath_.c_str(), wcslen(zzipfile->sZZipPath_.c_str()), szPath, _MAX_PATH, NULL, NULL);
 		if(zzipfile->FileItem_.namelength < 1) { 
@@ -314,9 +314,9 @@ bool ZZipFile::Save() {
 	return true;
 }
 
-refptr<ZZipFileObject> ZZipFile::RemoveFile( const tstring& sZZipPath )
+RefPtr<ZZipFileObject> ZZipFile::RemoveFile( const tstring& sZZipPath )
 {
-	refptr<ZZipFileObject> object;
+	RefPtr<ZZipFileObject> object;
 	ZZipFileObjects::iterator it = FileObjects_.begin();
 	for(; it != FileObjects_.end(); it++) {
 		tstring sTemp = (*it)->sZZipPath_;
@@ -329,9 +329,9 @@ refptr<ZZipFileObject> ZZipFile::RemoveFile( const tstring& sZZipPath )
 	return object;
 }
 
-refptr<ZZipFileObject> ZZipFile::AddFile( const tstring& sZZipPath, const tstring& sLocalFileName, bool bOverwrite )
+RefPtr<ZZipFileObject> ZZipFile::AddFile( const tstring& sZZipPath, const tstring& sLocalFileName, bool bOverwrite )
 {
-	refptr<ZZipFileObject> FileObjectPtr = FindFile(sZZipPath);
+	RefPtr<ZZipFileObject> FileObjectPtr = FindFile(sZZipPath);
 	if(FileObjectPtr == NULL) {
 		FileObjectPtr = new ZZipFileObject();
 
@@ -351,14 +351,14 @@ refptr<ZZipFileObject> ZZipFile::AddFile( const tstring& sZZipPath, const tstrin
 
 
 #ifdef _WIN32
-refptr<ZZipFileObject> ZZipFile::AddFile(const tstring& sZZipPath, IStream* pStream, bool bOverwrite)
+RefPtr<ZZipFileObject> ZZipFile::AddFile(const tstring& sZZipPath, IStream* pStream, bool bOverwrite)
 {
 	ATLASSERT((OpenMode_ & OpenModeWrite) && (Type_ == TypeFile));
 
 	if(StreamWriterPtr_ == NULL) return NULL;
 
 	// 检查文件是否存在
-	refptr<ZZipFileObject> FileObjectPtr = FindFile(sZZipPath);
+	RefPtr<ZZipFileObject> FileObjectPtr = FindFile(sZZipPath);
 	if(FileObjectPtr == NULL) {
 		FileObjectPtr = new ZZipFileObject;
 		FileObjectPtr->ZZipPathFromPath(sZZipPath);
@@ -516,12 +516,12 @@ bool ZZipFile::AddFolder( tstring sZZipPath, tstring sLocalFolder )
 	return true;
 }
 
-refptr<ZZipFileObject> ZZipFile::FindFile( const tstring& lpszZZipPath )
+RefPtr<ZZipFileObject> ZZipFile::FindFile( const tstring& lpszZZipPath )
 {
-	refptr<ZZipFileObject> p;
+	RefPtr<ZZipFileObject> p;
 	ZZipFileObjects::iterator it = FileObjects_.begin();
 	for(; it != FileObjects_.end(); it++) {
-		refptr<ZZipFileObject> object = (*it);
+		RefPtr<ZZipFileObject> object = (*it);
 		if(object->sZZipPath_ == lpszZZipPath) {
 			p = object;
 			break;
@@ -605,6 +605,28 @@ bool ZZipFile::IsGood() const
 tstring ZZipFile::FileName() const
 {
 	return sZZipFileName_;
+}
+
+void ZZipFile::EnumItem( const tstring& sZZipFolderPath, int FilterMode, void* arg, EnumFileFunction lpfunc )
+{
+	if(!sZZipFolderPath.empty()) {
+		tstring sTargetPath = sZZipFolderPath;
+		std::replace(sTargetPath.begin(), sTargetPath.end(), _T('\\'), _T('/'));
+		if(sTargetPath[sTargetPath.size()-1] != _T('/')) {
+			sTargetPath.append(1, _T('/'));
+		}
+
+		ZZipFileObjects::iterator it = FileObjects_.begin();
+		for(; it != FileObjects_.end(); it++) {
+			RefPtr<ZZipFileObject> object = (*it);
+			if(object->sZZipPath_.find(sTargetPath) == 0) {
+				if(!lpfunc(arg, FilterMode, object->sZZipPath_)) {
+					break;
+				}
+			}
+		}
+	}
+	
 }
 
 

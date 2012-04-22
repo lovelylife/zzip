@@ -3,10 +3,27 @@
 
 #include "stdafx.h"
 #include <iostream>
+#include "Color.h"
+#include <atlconv.h>
 
+bool EnumFileProc(void*, const tstring&);
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+
+// #ifdef USING_TestCode
+// 	QUI::Color::doTest();
+// #endif
+//	std::cout << "value is A = " << (int)((unsigned char)(value >> 24)) << std::endl;
+
+
+// 	unsigned long value = 0x01020304;
+// 	std::cout << "value is R" << (int)((unsigned char)value) << std::endl;
+// 	std::cout << "value is G" << (int)((unsigned char)(value >> 8)) << std::endl;
+// 	std::cout << "value is B" << (int)((unsigned char)(value >> 16)) << std::endl;
+// 	std::cout << "value is A" << (int)((unsigned char)(value >> 24)) << std::endl;
+	
+//	return 0;
 	bool bRet = true;
 	// TODO:
 	// do something
@@ -33,28 +50,37 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 
 	if(zzip.Open(argv[1])) {
+
+		// 枚举文件
+		zzip.EnumFile(_T("/"), 0, EnumFileProc);
+
 		// 读取文件"/4.gif" 保存到 "C:\\tt.gif"
-		std::ofstream of(_T("C:\\tt.gif"), std::ios::out|std::ios::binary);
-		if(of.good()) {
-			const ZZipFileObject* p = zzip.FindFile(_T("/4.gif"));
-			char buffer[1024] = {0};
-			int64 filesize = p->filesize();
-			int64 startpos = 0;
-			int64 fcount = filesize;
-			while(fcount > 0) {
-				int64 ReadBytes = zzip.ReadData(p, startpos, (void*)buffer, 1024);
-				if(ReadBytes > 0) {
-					fcount -= ReadBytes;
-					startpos += ReadBytes;
-					of.write(buffer, ReadBytes);
-				} else {
-					break;
-				}
-			}
-			of.close();
-		}
+// 		std::ofstream of(_T("C:\\tt.gif"), std::ios::out|std::ios::binary);
+// 		if(of.good()) {
+// 			const ZZipFileObject* p = zzip.FindFile(_T("/4.gif"));
+// 			char buffer[1024] = {0};
+// 			int64 filesize = p->filesize();
+// 			int64 startpos = 0;
+// 			int64 fcount = filesize;
+// 			while(fcount > 0) {
+// 				int64 ReadBytes = zzip.ReadData(p, startpos, (void*)buffer, 1024);
+// 				if(ReadBytes > 0) {
+// 					fcount -= ReadBytes;
+// 					startpos += ReadBytes;
+// 					of.write(buffer, ReadBytes);
+// 				} else {
+// 					break;
+// 				}
+// 			}
+// 			of.close();
+// 		}
 		zzip.Close();
 	}
 	return 0;
 }
 
+bool EnumFileProc(void*, const tstring& sFileName) {
+
+	std::wcout << sFileName.c_str() << std::endl;
+	return true;
+}
