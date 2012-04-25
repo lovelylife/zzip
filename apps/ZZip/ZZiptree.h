@@ -35,19 +35,19 @@ public:
 
 
 template<class _Traits>
-class _tree : public _tree_node<_Traits> {
+class _tree {
 public:
 	typedef _tree<_Traits> _MyType;
-	typedef _tree_node<_Traits> _MyBase;
+	typedef _tree_node<_Traits> _MyNode;
 	typedef typename _Traits::KeyType KeyType;
 	typedef typename _Traits::ValueType ValueType;
-//	typedef typename _Traits::KeyCompare KeyCompare;
+	typedef typename _Traits::KeyCompare KeyCompare;
 
-	typedef typename _MyBase::KeyCompare KeyCompare;
-	typedef typename _MyBase::NodePtr NodePtr;
-	typedef typename _MyBase::PathType PathType;
+	typedef typename _MyNode::NodePtr NodePtr;
+	typedef typename _MyNode::PathType PathType;
 
-	_tree() : _MyBase(NULL, NULL){}
+	_tree() : _Header(0){}
+	~_tree() {}
 
 public:
 	NodePtr insert(const PathType& path, const ValueType& v) {
@@ -84,7 +84,7 @@ public:
 		return (*node)._Value.first;
 	}
 
-	static PathType& _Path(NodePtr node) {
+	static PathType _Path(NodePtr node) {
 		NodePtr _P = _Parent(node);
 		PathType stack;
 		while(_P) {
@@ -111,6 +111,9 @@ protected:
 		NodePtr _where = new _tree_node(v, parent);
 		return _where;
 	}
+
+private:
+	NodePtr _Header;
 };
 
 template<class Kty, class Vty>
@@ -140,8 +143,7 @@ public:
 	typedef typename _MyBase::PathType PathType;
 	typedef typename _MyBase::KeyCompare KeyCompare;
 
-	ZZipTree() : _MyBase() {}
-
+	ZZipTree() {}
 	~ZZipTree() {}
 
 };
