@@ -68,7 +68,7 @@ public:
 	  RefPtr<ZZipFileObject> fileobject;
   };
 
-  typedef zziptree<std::string, ZZipFileObject> ZZipFileTree;
+  typedef ZZipTree<std::string, ZZipFileObject> ZZipFileTree;
 
 public:
   // 标准构造函数
