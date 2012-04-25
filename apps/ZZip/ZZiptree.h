@@ -6,13 +6,15 @@
 
 #include <list>
 
-template<class Traits>
+template<class _Traits>
 class _tree_node {
 public:
-	typedef _tree_node* NodePtr;
-	typedef typename Traits::KeyType KeyType;
-	typedef typename Traits::ValueType ValueType;
-	typedef typename Traits::PathType PathType;
+	typedef _tree_node<_Traits> _MyType;
+	typedef typename _Traits::KeyType KeyType;
+	typedef typename _Traits::ValueType ValueType;
+	typedef typename _Traits::PathType PathType;
+	typedef typename _Traits::KeyCompare KeyCompare;
+	typedef _MyType* NodePtr;
 
 	_tree_node(const ValueType& v, NodePtr Parent)
 	: _Value(v)
@@ -30,32 +32,22 @@ public:
 	ValueType _Value;
 };
 
-template<class Kty, class Vty>
-class _tree_node_traits {
+
+
+template<class _Traits>
+class _tree : public _tree_node<_Traits> {
 public:
-	typedef Kty KeyType;
-	typedef Vty ValueType;
-	typedef std::list<KeyType> PathType;
+	typedef _tree<_Traits> _MyType;
+	typedef _tree_node<_Traits> _MyBase;
+	typedef typename _Traits::KeyType KeyType;
+	typedef typename _Traits::ValueType ValueType;
+//	typedef typename _Traits::KeyCompare KeyCompare;
 
-	class IsKeyEqual {
-	public:
-		bool operator()(KeyType key1, KeyType key2) {
-			return (key1 == key2);
-		}
-	};
-};
+	typedef typename _MyBase::KeyCompare KeyCompare;
+	typedef typename _MyBase::NodePtr NodePtr;
+	typedef typename _MyBase::PathType PathType;
 
-template<class Kty, 
-	class Vty>
-class _tree : public _tree_node< _tree_node_traits<Kty, Vty> > {
-public:
-	typedef typename _tree_node::KeyType KeyType;
-	typedef typename _tree_node::ValueType ValueType;
-	typedef typename _tree_node::NodePtr NodePtr;
-	typedef typename _tree_node::PathType PathType;
-	typedef _tree_node_traits::IsKeyEqual KeyCompare;
-
-	_tree() {}
+	_tree() : _MyBase(NULL, NULL){}
 
 public:
 	NodePtr insert(const PathType& path, const ValueType& v) {
@@ -70,26 +62,22 @@ public:
 	NodePtr _where(const PathType& path) {
 		// 查找path所在节点
 		NodePtr node = _Root();
-		while(path.size() && (NULL != node) ) {
-			PathType::const_iterator cit = path.begin();
+		PathType::const_iterator cit = path.begin();
+		for(; cit != path.end(); cit++) {
 			if(KeyCompare(*cit, _Key(node))) {
 				node = _Left(node); // 找孩子
 			} else {
 				node = _Right(node); // 找兄弟
 			}
-
-			path.pop_front();
 		}
 
-		if((path.size() == 0) && (NULL != node)) {
-			return node;
-		}
+		return node;
 	}
 
 // operator
 public:
-	NodePtr _Root() const {
-		return this;
+	NodePtr _Root() {
+		return static_cast<NodePtr>(this);
 	}
 
 	static KeyType& _Key(NodePtr node) {
@@ -124,5 +112,39 @@ protected:
 		return _where;
 	}
 };
+
+template<class Kty, class Vty>
+class _tree_node_traits {
+public:
+	typedef Kty KeyType;
+	typedef Vty ValueType;
+	typedef std::list<KeyType> PathType;
+
+	class KeyCompare {
+	public:
+		bool operator()(const KeyType& key1, const KeyType& key2) {
+			return (key1 == key2);
+		}
+	};
+};
+
+template<class Kty,
+	class Vty>
+class ZZipTree : public _tree< _tree_node_traits<Kty, Vty> > 
+{
+public:
+	typedef ZZipTree<Kty, Kty> _MyType;
+	typedef _tree< _tree_node_traits<Kty, Vty> > _MyBase;
+	typedef typename _MyBase::KeyType KeyType;
+	typedef typename _MyBase::ValueType Value;
+	typedef typename _MyBase::PathType PathType;
+	typedef typename _MyBase::KeyCompare KeyCompare;
+
+	ZZipTree() : _MyBase() {}
+
+	~ZZipTree() {}
+
+};
+
 
 #endif
