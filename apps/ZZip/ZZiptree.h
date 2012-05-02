@@ -4,7 +4,52 @@
 
 #include "ZZipFileObject.h"
 
-#include<list>
+#include <list>
+
+template<class _Traits>
+class _tree_node : public _Traits {
+public:
+	struct _node;
+	typedef _node* NodePtr;
+	typedef _tree_node<_Traits> _MyType;
+	typedef typename _Traits::KeyType KeyType;
+	typedef typename _Traits::ValueType ValueType;
+	typedef typename _Traits::PathType PathType;
+//	typedef typename _Traits::KeyCompare KeyCompare;
+
+	struct _node {
+		_node(const ValueType& v, NodePtr Parent, bool isnil)
+			: _Value(v)	, _IsNil(isnil), _Parent(Parent), _Left(0)	, _Right(0)
+		{
+
+		}
+
+		_node() 
+			:_Parent(0), _Left(0), _Right(0), _IsNil(false) {
+		}
+
+		NodePtr _Parent;	// 双亲节点
+		NodePtr _Left;		// 孩子节点
+		NodePtr _Right;		// 兄弟节点
+		ValueType _Value;	// 绑定的数据
+		bool _IsNil;			// 是否是叶节点
+	};
+
+	_tree_node() {}
+	~_tree_node() {}
+
+	NodePtr _buy(const ValueType& v, NodePtr Parent, bool isnil) {
+		NodePtr _newnode = new _node(v, Parent, isnil);
+		return _newnode;
+	}
+
+	NodePtr _buy() {
+		NodePtr _newnode = new _node();
+		return _newnode;
+	}
+};
+
+
 
 template<class _Traits>
 class _tree : public _tree_node<_Traits> {
@@ -13,9 +58,9 @@ public:
 	typedef _tree_node<_Traits> _MyBase;
 	typedef typename _Traits::KeyType KeyType;
 	typedef typename _Traits::ValueType ValueType;
-//	typedef typename _Traits::KeyCompare KeyCompare;
+	typedef typename _Traits::MapType MapType;
 
-	typedef typename _Traits::KeyCompare KeyCompare;
+//	typedef typename _Traits::KeyCompare KeyCompare;
 	typedef typename _MyBase::NodePtr NodePtr;
 	typedef typename _MyBase::PathType PathType;
 
@@ -26,17 +71,18 @@ public:
 	}
 
 public:
+	// 如果path不存在则返回空指针， 在insert之前先判断path是否存在
 	NodePtr insert(const PathType& path, const ValueType& v) {
-		NodePtr _Where = _where(path);
-		if(0 == _Where) {
-			// 构建节点
-			_Where = _construct_path(path);
+		NodePtr _Where = where(path);
+		if(NULL == _Where) { // 构建路径节点
+			_Where = kdir(path); 
 		}
-		NodePtr _newnode = _buy_node(v, _Where);
+		// 构建叶节点
+		NodePtr _newnode = _buy_node(v, _Where, true);
 		return _newnode;
 	}
 
-	NodePtr _where(const PathType& path) {
+	NodePtr where(const PathType& path) {
 		// 查找path所在节点
 		NodePtr node = _Root();
 		PathType::const_iterator cit = path.begin();
@@ -47,9 +93,43 @@ public:
 				node = _Right(node); // 找兄弟
 			}
 		}
-
 		return node;
 	}
+
+	// 构造路径，如果最后一个是叶节点则失败
+	NodePtr kdir(const PathType& path) {
+		NodePtr _rootnode = _Root();
+		NodePtr _wherenode = _rootnode;
+		NodePtr _where_construct = _rootnode;
+		PathType::const_iterator cit = path.begin();
+		for(; cit != path.end() && (NULL != _wherenode); cit++) {
+			// 是否存在（*cit）子节点
+			NodePtr _temp_node = _wherenode;
+			bool node_exist = false;
+			while(NULL != _temp_node) {
+				if((*cit) == _Key(_temp_node)) {
+					// 该节点存在
+					node_exist = true;
+					break;
+				}
+				_temp_node = _Right(_temp_node); // 查找兄弟
+			}
+			if(!node_exist) {	// 构造				
+				_where_construct = _wherenode;
+				break;
+			} else {
+				_wherenode = _Left(_wherenode);
+			}
+		}
+		
+		// 从头cit和_where_construct 开始构造非叶节点
+		for(; cit != path.end(); cit++) {
+			NodePtr _newnode = _buy_node(_MyBase::_Mv(*cit, MapType()), _where_construct, false);
+			_where_construct = _newnode;
+		}
+		return _where_construct;
+	}
+
 
 // operator
 public:
@@ -87,51 +167,17 @@ public:
 		return (*node)._Right;
 	}
 
+	static bool _IsLeaf(NodePtr) {
+		return (*node)._IsNil;
+	}
 protected:
 
 	void _init() {
 		_Header = _buy_node();
-	}
+	}	
 
-	NodePtr _construct_path(const PathType& path) {
-		NodePtr _rootnode = _Root();
-		NodePtr _wherenode = _rootnode;
-		NodePtr _where_construct = _rootnode;
-		PathType::const_iterator cit = path.begin();
-		for(; cit != path.end() && (NULL != _wherenode); cit++) {
-			// 是否存在（*cit）子节点
-			NodePtr _temp_node = _wherenode;
-			bool node_exist = false;
-			while(NULL != _temp_node) {
-				if((*cit) == _Key(_temp_node)) {
-					// 该节点存在
-					node_exist = true;
-					break;
-				}
-				_temp_node = _Right(_temp_node); // 查找兄弟
-			}
-
-			if(!node_exist) {
-				// 构造
-				_where_construct = _wherenode;
-				break;
-			} else {
-				_wherenode = _Left(_wherenode);
-			}
-		}
-
-		// 从头cit和_where_construct 开始构造
-		for(; cit != path.end(); cit++) {
-			
-			NodePtr _newnode = _buy_node(_MyBase::_Mv(*cit, 0), _where_construct);
-			_where_construct = _newnode;
-		}
-
-		return _where_construct;
-	}
-
-	NodePtr _buy_node(const ValueType& v, NodePtr parent) {
-		NodePtr _newnode = _MyBase::_buy(v, parent);
+	NodePtr _buy_node(const ValueType& v, NodePtr parent, bool isnil) {
+		NodePtr _newnode = _MyBase::_buy(v, parent, isnil);
 		if(parent) {
 			if(_Left(parent)) {
 				NodePtr n = _Left(parent);
@@ -164,21 +210,22 @@ class _tree_node_traits {
 public:
 	typedef Kty KeyType;
 	typedef std::pair<Kty, Vty> ValueType;
+	typedef Vty MapType;
 	typedef std::list<KeyType> PathType;
 
-	class KeyCompare : public binary_function<KeyType, KeyType, bool> {
-	public:
-		bool operator()(const KeyType& key1, const KeyType& key2) {
-			return (key1 == key2);
-		}
-	};
+// 	class KeyCompare : public binary_function<KeyType, KeyType, bool> {
+// 	public:
+// 		bool operator()(const KeyType& key1, const KeyType& key2) {
+// 			return (key1 == key2);
+// 		}
+// 	};
 
 	static const KeyType& _Kf(const ValueType& _Val)
 	{	// extract key from element value
 		return (_Val.first);
 	}
 
-	static ValueType _Mv(const KeyType& k, const Vty& v) {
+	static ValueType _Mv(const KeyType& k, const MapType& v) {
 		return std::make_pair(k, v);
 	}
 };
@@ -193,12 +240,14 @@ public:
 	typedef typename _MyBase::KeyType KeyType;
 	typedef typename _MyBase::ValueType ValueType;
 	typedef typename _MyBase::PathType PathType;
-	typedef typename _MyBase::KeyCompare KeyCompare;
+//	typedef typename _MyBase::KeyCompare KeyCompare;
 
-	ZZipTree() : _MyBase() {}
+	ZZipTree() 
+		: _MyBase() {
+	}
 
-	~ZZipTree() {}
-
+	~ZZipTree() {
+	}
 };
 
 

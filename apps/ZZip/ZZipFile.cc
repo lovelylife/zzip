@@ -1,11 +1,10 @@
 
 #include "stdafx.h"
-#include "TypeDefines.h"
-#include "RefCounted.h"
+#include "typedefs.h"
+#include "ref_counted.h"
 #include <iostream>
 #include <fstream>
-#include <atlbase.h>
-#include <atlconv.h>
+
 #include <algorithm>
 #include <io.h>
 #include <strstream>
@@ -13,6 +12,8 @@
 #include "ZZipCommand.h"
 
 #ifdef _WIN32
+#include <atlbase.h>
+#include <atlconv.h>
 #include <shlwapi.h>
 #include <shellapi.h>
 
@@ -201,7 +202,9 @@ bool ZZipFile::Parse( std::iostream* pStream )
 			if(!sTemp.empty()) {
 				FileObjectPtr->ZZipPathFromPath(tstring(CA2T(sTemp.c_str())));
 				FileObjectPtr->AddRef();
-				FileObjects_.push_back(FileObjectPtr);
+				//@todo
+				//FileObjectsTree_.insert();
+				//FileObjects_.push_back(FileObjectPtr);
 			}
 
 			if(pStream->eof() || (restsize <= 0)) {
@@ -629,4 +632,49 @@ void ZZipFile::EnumItem( const tstring& sZZipFolderPath, int FilterMode, void* a
 	
 }
 
+//////////////////////////////////////////////////////////////////////////
+// class ZZipFileTree
 
+bool ZZipFile::ZZipFileTree::String2Path( const std::string& sInput, ZZipFileTree::PathType& path)
+{
+	path.clear();
+	size_t offset = 0;
+	size_t pos = sInput.find('/', offset);
+
+	// 第一个如果是“/”则跳过
+	if(pos == 0) {
+		offset = 1;
+		pos = sInput.find('/', offset);
+	}
+
+	while(pos != std::string::npos) {
+		path.push_back(sInput.substr(offset, pos-offset));
+		offset = pos+1;
+		pos = sInput.find('/', offset);
+	}
+	if(pos != sInput.size()) {
+		path.push_back(sInput.substr(offset,sInput.size()-offset));
+	}
+	return false;
+}
+
+bool ZZipFile::ZZipFileTree::Path2String( const ZZipFileTree::PathType& path, std::string& sOutput)
+{
+	sOutput.clear();
+	ZZipFileTree::PathType::const_iterator cit = path.begin();
+	for(; cit != path.end(); cit++) {
+		sOutput += "/";
+		sOutput += (*cit);
+	}
+	return true;
+}
+
+ZZipFile::ZZipFileTree::ZZipFileTree()
+{
+
+}
+
+ZZipFile::ZZipFileTree::~ZZipFileTree()
+{
+
+}
