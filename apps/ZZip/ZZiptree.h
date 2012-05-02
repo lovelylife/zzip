@@ -2,8 +2,6 @@
 #ifndef __TREE_H__
 #define __TREE_H__
 
-#include "ZZipFileObject.h"
-
 #include <list>
 
 template<class _Traits>
@@ -68,6 +66,10 @@ public:
 		: _MyBase()
 	{
 		_init();
+	}
+
+	~_tree() {
+		_tidy();
 	}
 
 public:
@@ -171,10 +173,24 @@ public:
 		return (*node)._IsNil;
 	}
 protected:
-
+	// 构造只有根节点的二叉树
 	void _init() {
 		_Header = _buy_node();
-	}	
+	}
+
+	// 清理树
+	void _tidy() {
+		_destory(_Root());
+		_Header = 0;
+	}
+
+	void _destory(NodePtr node) {
+		if(node) {
+			_destory(_Left(node));
+			_destory(_Right(node));
+			delete node;
+		}
+	}
 
 	NodePtr _buy_node(const ValueType& v, NodePtr parent, bool isnil) {
 		NodePtr _newnode = _MyBase::_buy(v, parent, isnil);
@@ -212,13 +228,6 @@ public:
 	typedef std::pair<Kty, Vty> ValueType;
 	typedef Vty MapType;
 	typedef std::list<KeyType> PathType;
-
-// 	class KeyCompare : public binary_function<KeyType, KeyType, bool> {
-// 	public:
-// 		bool operator()(const KeyType& key1, const KeyType& key2) {
-// 			return (key1 == key2);
-// 		}
-// 	};
 
 	static const KeyType& _Kf(const ValueType& _Val)
 	{	// extract key from element value
