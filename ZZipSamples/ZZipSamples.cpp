@@ -3,20 +3,17 @@
 
 #include "stdafx.h"
 #include <iostream>
-#include "Color.h"
+//#include "Color.h"
 #include <atlconv.h>
 
 bool EnumFileProc(void*, const tstring&);
 
-int _tmain(int argc, _TCHAR* argv[])
-{
+int _tmain(int argc, _TCHAR* argv[]) {
 
 // #ifdef USING_TestCode
 // 	QUI::Color::doTest();
 // #endif
 //	std::cout << "value is A = " << (int)((unsigned char)(value >> 24)) << std::endl;
-
-
 // 	unsigned long value = 0x01020304;
 // 	std::cout << "value is R" << (int)((unsigned char)value) << std::endl;
 // 	std::cout << "value is G" << (int)((unsigned char)(value >> 8)) << std::endl;
@@ -25,10 +22,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	
 //	return 0;
 
-	std::string sPath = "a/b/c/d/e.htm";
+	tstring sPath = _T("a/b/c/d/e.htm");
 	ZZipFile::ZZipFileTree::PathType path;
 	ZZipFile::ZZipFileTree::String2Path(sPath, path);
-	std::string sPathOutput;
+	tstring sPathOutput;
 	ZZipFile::ZZipFileTree::Path2String(path,sPathOutput);
 
 	bool bRet = true;

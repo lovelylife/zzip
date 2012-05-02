@@ -201,9 +201,16 @@ bool ZZipFile::Parse( std::iostream* pStream )
 			// std::cout << "file position: " << StreamReaderPtr_->tellg() << std::endl;
 			if(!sTemp.empty()) {
 				FileObjectPtr->ZZipPathFromPath(tstring(CA2T(sTemp.c_str())));
-				FileObjectPtr->AddRef();
 				//@todo
-				//FileObjectsTree_.insert();
+				ZZipFileTree::PathType pathtype;
+				ZZipFileTree::String2Path(FileObjectPtr->path(), pathtype);
+				if(FileObjectPtr->isfolder()) {
+					FileObjectsTree_.kdir(pathtype);
+				} else {
+					tstring filename = (*pathtype.rbegin());
+					pathtype.pop_back();
+					FileObjectsTree_.insert(pathtype, std::make_pair<tstring, RefPtr<ZZipFileObject> >(filename, FileObjectPtr));
+				}
 				//FileObjects_.push_back(FileObjectPtr);
 			}
 
@@ -635,16 +642,16 @@ void ZZipFile::EnumItem( const tstring& sZZipFolderPath, int FilterMode, void* a
 //////////////////////////////////////////////////////////////////////////
 // class ZZipFileTree
 
-bool ZZipFile::ZZipFileTree::String2Path( const std::string& sInput, ZZipFileTree::PathType& path)
+bool ZZipFile::ZZipFileTree::String2Path( const tstring& sInput, ZZipFileTree::PathType& path)
 {
 	path.clear();
 	size_t offset = 0;
-	size_t pos = sInput.find('/', offset);
+	size_t pos = sInput.find(_T('/'), offset);
 
 	// 第一个如果是“/”则跳过
 	if(pos == 0) {
 		offset = 1;
-		pos = sInput.find('/', offset);
+		pos = sInput.find(_T('/'), offset);
 	}
 
 	while(pos != std::string::npos) {
@@ -658,12 +665,12 @@ bool ZZipFile::ZZipFileTree::String2Path( const std::string& sInput, ZZipFileTre
 	return false;
 }
 
-bool ZZipFile::ZZipFileTree::Path2String( const ZZipFileTree::PathType& path, std::string& sOutput)
+bool ZZipFile::ZZipFileTree::Path2String( const ZZipFileTree::PathType& path, tstring& sOutput)
 {
 	sOutput.clear();
 	ZZipFileTree::PathType::const_iterator cit = path.begin();
 	for(; cit != path.end(); cit++) {
-		sOutput += "/";
+		sOutput += _T("/");
 		sOutput += (*cit);
 	}
 	return true;
