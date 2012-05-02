@@ -69,16 +69,16 @@ public:
   };
 
   class ZZipFileTree 
-	: public ZZipTree<std::string, ZZipFileObject>
+	: public ZZipTree< tstring, RefPtr<ZZipFileObject> >
   {
   public:
-	typedef ZZipTree<std::string, ZZipFileObject> _MyBase;
+	typedef ZZipTree< tstring, RefPtr<ZZipFileObject> > _MyBase;
 	typedef _MyBase::PathType PathType;
 
   // 静态方法
   public:
-	static bool String2Path(const std::string&, PathType&);
-	static bool Path2String(const PathType&, std::string&);
+	static bool String2Path(const tstring&, PathType&);
+	static bool Path2String(const PathType&, tstring&);
 
   // 构造析构
   public:
