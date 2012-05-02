@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <TypeDefines.h>
+#include "typedefs.h"
 
 #define ZZIP_SIG "ZZip"
 #define ZZIP_SIG_LEN  4

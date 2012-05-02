@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../third_party;../../base;../apps/ZZip;./"
+				AdditionalIncludeDirectories="../third_party;../base;../apps/ZZip;./"
 				PreprocessorDefinitions="_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -158,7 +158,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\base\atomicops_internals_x86_gcc.cc"
+				RelativePath="..\base\atomicops_internals_x86_gcc.cc"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -170,7 +170,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\base\RefCounted.cc"
+				RelativePath="..\base\ref_counted.cc"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"

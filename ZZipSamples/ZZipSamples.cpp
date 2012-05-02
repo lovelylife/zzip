@@ -24,6 +24,13 @@ int _tmain(int argc, _TCHAR* argv[])
 // 	std::cout << "value is A" << (int)((unsigned char)(value >> 24)) << std::endl;
 	
 //	return 0;
+
+	std::string sPath = "a/b/c/d/e.htm";
+	ZZipFile::ZZipFileTree::PathType path;
+	ZZipFile::ZZipFileTree::String2Path(sPath, path);
+	std::string sPathOutput;
+	ZZipFile::ZZipFileTree::Path2String(path,sPathOutput);
+
 	bool bRet = true;
 	// TODO:
 	// do something
@@ -52,7 +59,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	if(zzip.Open(argv[1])) {
 
 		// 枚举文件
-		zzip.EnumFile(_T("/"), 0, EnumFileProc);
+//		zzip.EnumFile(_T("/"), 0, EnumFileProc);
 
 		// 读取文件"/4.gif" 保存到 "C:\\tt.gif"
 // 		std::ofstream of(_T("C:\\tt.gif"), std::ios::out|std::ios::binary);

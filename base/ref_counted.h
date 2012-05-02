@@ -213,28 +213,28 @@ namespace base {
 //   }
 //
 template <class T>
-class refptr {
+class RefPtr {
 public:
-	refptr() : ptr_(NULL) {
+	RefPtr() : ptr_(NULL) {
 	}
 
-	refptr(T* p) : ptr_(p) {
+	RefPtr(T* p) : ptr_(p) {
 		if (ptr_)
 			ptr_->AddRef();
 	}
 
-	refptr(const refptr<T>& r) : ptr_(r.ptr_) {
+	RefPtr(const RefPtr<T>& r) : ptr_(r.ptr_) {
 		if (ptr_)
 			ptr_->AddRef();
 	}
 
 	template <typename U>
-	refptr(const refptr<U>& r) : ptr_(r.get()) {
+	RefPtr(const RefPtr<U>& r) : ptr_(r.get()) {
 		if (ptr_)
 			ptr_->AddRef();
 	}
 
-	~refptr() {
+	~RefPtr() {
 		if (ptr_)
 			ptr_->Release();
 	}
@@ -254,7 +254,7 @@ public:
 		return retVal;
 	}
 
-	refptr<T>& operator=(T* p) {
+	RefPtr<T>& operator=(T* p) {
 		// AddRef first so that self assignment should work
 		if (p)
 			p->AddRef();
@@ -264,12 +264,12 @@ public:
 		return *this;
 	}
 
-	refptr<T>& operator=(const refptr<T>& r) {
+	RefPtr<T>& operator=(const RefPtr<T>& r) {
 		return *this = r.ptr_;
 	}
 
 	template <typename U>
-	refptr<T>& operator=(const refptr<U>& r) {
+	RefPtr<T>& operator=(const RefPtr<U>& r) {
 		return *this = r.get();
 	}
 
@@ -279,7 +279,7 @@ public:
 		*pp = p;
 	}
 
-	void swap(refptr<T>& r) {
+	void swap(RefPtr<T>& r) {
 		swap(&r.ptr_);
 	}
 
@@ -290,8 +290,8 @@ protected:
 // Handy utility for creating a scoped_refptr<T> out of a T* explicitly without
 // having to retype all the template arguments
 template <typename T>
-refptr<T> make_scoped_refptr(T* t) {
-	return refptr<T>(t);
+RefPtr<T> make_scoped_refptr(T* t) {
+	return RefPtr<T>(t);
 }
 
 #endif  // BASE_REF_COUNTED_H_

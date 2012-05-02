@@ -68,7 +68,25 @@ public:
 	  RefPtr<ZZipFileObject> fileobject;
   };
 
-  typedef ZZipTree<std::string, ZZipFileObject> ZZipFileTree;
+  class ZZipFileTree 
+	: public ZZipTree<std::string, ZZipFileObject>
+  {
+  public:
+	typedef ZZipTree<std::string, ZZipFileObject> _MyBase;
+	typedef _MyBase::PathType PathType;
+
+  // 静态方法
+  public:
+	static bool String2Path(const std::string&, PathType&);
+	static bool Path2String(const PathType&, std::string&);
+
+  // 构造析构
+  public:
+	ZZipFileTree();
+    ~ZZipFileTree();
+  };
+  
+  //typedef ZZipTree<std::string, ZZipFileObject> ZZipFileTree;
 
 public:
   // 标准构造函数

@@ -8,7 +8,7 @@
 // ÃüÁîĞĞ½âÎöÆ÷
 //////////////////////////////////////////////////////////////////////////
 
-#include <TypeDefines.h>
+#include "typedefs.h"
 #include "ZZip.h"
 
 class ZZipCommand {

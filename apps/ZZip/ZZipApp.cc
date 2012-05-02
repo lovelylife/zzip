@@ -48,7 +48,7 @@ bool ZZipApp::run(int argc, TCHAR* argv[]) {
 		// 读取文件"/4.gif" 保存到 "C:\\tt.gif"
 		std::ofstream of(_T("C:\\tt.xml"), std::ios::out|std::ios::binary);
 		if(of.good()) {
-			refptr<ZZipFileObject> FileObjectPtr = zzip.FindFile(_T("/3.txt"));
+			RefPtr<ZZipFileObject> FileObjectPtr = zzip.FindFile(_T("/3.txt"));
 			if(FileObjectPtr) {
 				char buffer[1024] = {0};
 				uint64 filesize = FileObjectPtr->filesize();
