@@ -170,7 +170,7 @@ public:
 
 #endif 
   // 删除文件夹
-  ZZIP_Writer RefPtr<ZZipFileObject> RemoveFile(const tstring& sZZipPath);
+  ZZIP_Writer void RemoveFile(const tstring& sZZipPath);
 
   // 重命名
   ZZIP_Writer bool RenameFile(const tstring& sOldPath, const tstring& sNewPath);

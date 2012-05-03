@@ -224,7 +224,7 @@ bool ZZipFile::Parse( std::iostream* pStream )
 }
 
 
-// 保存文件
+// 保存文件(序列化)
 bool ZZipFile::Save() {
 
 	// 非文件类型不能进行文件保存操作
@@ -239,6 +239,8 @@ bool ZZipFile::Save() {
 	
 	// 先移动文件头大小位置
 	StreamWriterPtr_->seekp(sizeof(ZZipFileHeader), std::ios::beg);
+
+	// 遍历目录树，序列化
 
 	// 写入文件数据
 	char buffer[2048];
@@ -324,19 +326,22 @@ bool ZZipFile::Save() {
 	return true;
 }
 
-RefPtr<ZZipFileObject> ZZipFile::RemoveFile( const tstring& sZZipPath )
+void ZZipFile::RemoveFile( const tstring& sZZipPath )
 {
 	RefPtr<ZZipFileObject> object;
-	ZZipFileObjects::iterator it = FileObjects_.begin();
-	for(; it != FileObjects_.end(); it++) {
-		tstring sTemp = (*it)->sZZipPath_;
-		if(sZZipPath.compare(sTemp)) {
-			object = (ZZipFileObject*)(*it);
-			FileObjects_.erase(it);
-			break;
-		}
-	}
-	return object;
+	ZZipFileTree::PathType path;
+	ZZipFileTree::String2Path(sZZipPath, path);
+	FileObjectsTree_.erase(path);
+// 	ZZipFileObjects::iterator it = FileObjects_.begin();
+// 	for(; it != FileObjects_.end(); it++) {
+// 		tstring sTemp = (*it)->sZZipPath_;
+// 		if(sZZipPath.compare(sTemp)) {
+// 			object = (ZZipFileObject*)(*it);
+// 			FileObjects_.erase(it);
+// 			break;
+// 		}
+// 	}
+//	return object;
 }
 
 RefPtr<ZZipFileObject> ZZipFile::AddFile( const tstring& sZZipPath, const tstring& sLocalFileName, bool bOverwrite )
@@ -419,8 +424,7 @@ RefPtr<ZZipFileObject> ZZipFile::AddFile(const tstring& sZZipPath, IStream* pStr
 
 #endif
 
-void ZZipFile::Close()
-{
+void ZZipFile::Close() {
 	if(StreamPtr_ == NULL) return;
 
 	ZZipFileObjects::iterator it = FileObjects_.begin();
@@ -526,17 +530,21 @@ bool ZZipFile::AddFolder( tstring sZZipPath, tstring sLocalFolder )
 	return true;
 }
 
-RefPtr<ZZipFileObject> ZZipFile::FindFile( const tstring& lpszZZipPath )
+RefPtr<ZZipFileObject> ZZipFile::FindFile( const tstring& sZZipPath )
 {
 	RefPtr<ZZipFileObject> p;
-	ZZipFileObjects::iterator it = FileObjects_.begin();
-	for(; it != FileObjects_.end(); it++) {
-		RefPtr<ZZipFileObject> object = (*it);
-		if(object->sZZipPath_ == lpszZZipPath) {
-			p = object;
-			break;
-		}
-	}
+	ZZipFileTree::PathType path;
+	ZZipFileTree::String2Path(sZZipPath, path);
+	FileObjectsTree_.Where(path, p);
+
+// 	ZZipFileObjects::iterator it = FileObjects_.begin();
+// 	for(; it != FileObjects_.end(); it++) {
+// 		RefPtr<ZZipFileObject> object = (*it);
+// 		if(object->sZZipPath_ == lpszZZipPath) {
+// 			p = object;
+// 			break;
+// 		}
+// 	}
 
 	return p;
 }
