@@ -131,7 +131,34 @@ public:
 		}
 		return _where_construct;
 	}
-
+	// 删除节点
+	void erase(const PathType& path) {
+		NodePtr _where = where(path);
+		if(NULL  == _where ) {
+			return;
+		}
+		// 父亲节点, 如果p为空则为根节点，不允许删除
+		NodePtr p = _Parent(_where);
+		if(NULL != p) {
+			NodePtr prev = _Left(p);
+			NodePtr next = _Right(_where);
+			if(prev == _where) { // 是父亲节点的第一个子节点
+				p->_Left = next;				
+			} else { // 不是父亲节点的第一个子节点
+				while(prev) {
+					if(_Right(prev) == _where) {
+						// 找到节点
+						prev->_Right = next;
+						break;
+					}
+					prev = _Right(prev);
+				}
+			}
+			// 右子树指向空，不需要删除
+			_where->_Right = 0;
+			_destory(_where);
+		}
+	}
 
 // operator
 public:
@@ -249,6 +276,14 @@ public:
 	typedef typename _MyBase::KeyType KeyType;
 	typedef typename _MyBase::ValueType ValueType;
 	typedef typename _MyBase::PathType PathType;
+
+	class TravClass {
+	public:
+		TravClass();
+		~TravClass();
+	};
+
+	typedef bool (*Travsor)(const ValueType&, void* arg);
 //	typedef typename _MyBase::KeyCompare KeyCompare;
 
 	ZZipTree() 
@@ -256,6 +291,33 @@ public:
 	}
 
 	~ZZipTree() {
+	}
+
+	bool Where(const PathType& path, MapType& out) {
+		NodePtr node = where(path);
+		if(NULL == node) {
+			return false;
+		}
+		out = _Value(node).second;
+		return true;
+	}
+
+	void Trav(Travsor tv, void* arg) {
+		NodePtr myroot = _Root();
+		NodePtr node = _Left(myroot);
+		_Trav(node, tv, arg);
+	}
+
+private:
+	bool _Trav(NodePtr node, Travsor tv, void* arg) {
+		if(NULL == node) return false; 
+		if(tv) {
+			if(!tv(_Value(node), arg)) {
+				return false;
+			}
+		}
+
+		return _Trav(_Left(node)) && _Trav(_Right(node));
 	}
 };
 
