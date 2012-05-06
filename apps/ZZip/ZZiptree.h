@@ -3,6 +3,7 @@
 #define __TREE_H__
 
 #include <list>
+#include "utils/AcfDelegate.h"
 
 template<class _Traits>
 class _tree_node : public _Traits {
@@ -70,31 +71,65 @@ public:
 
 	~_tree() {
 		_tidy();
+		_destory(_Header);
 	}
 
 public:
-	// 如果path不存在则返回空指针， 在insert之前先判断path是否存在
-	NodePtr insert(const PathType& path, const ValueType& v) {
-		NodePtr _Where = where(path);
-		if(NULL == _Where) { // 构建路径节点
-			_Where = kdir(path); 
+	// 插入叶节点： 如果path叶节点不存在则返回空指针， 在insert之前先判断path是否存在
+	NodePtr insert(PathType path, const MapType& v) {
+		NodePtr _Where = Where(path, true);
+		NodePtr _returnnode = NULL;
+		KeyType key = (*path.rbegin());
+		path.pop_back();
+		if(NULL == _Where) { 
+			_Where = kdir(path);
+			// 构建叶节点
+			_returnnode = _buy_node(std::make_pair(key, v), _Where, true);
+		} else {
+			// 节点已经存在
+			_returnnode = _Where;
+			_returnnode->_Value = std::make_pair(key, v);
 		}
-		// 构建叶节点
-		NodePtr _newnode = _buy_node(v, _Where, true);
-		return _newnode;
+		return _returnnode;
 	}
 
-	NodePtr where(const PathType& path) {
+	NodePtr Where(PathType path, bool isleaf = false) {
 		// 查找path所在节点
 		NodePtr node = _Root();
-		PathType::const_iterator cit = path.begin();
-		for(; cit != path.end() && (NULL != node); cit++) {
-			if((*cit) == _Key(node)) {
-				node = _Left(node); // 找孩子
+		//PathType::const_iterator cit = path.begin();
+		bool bfound = false;
+		if(path.size() < 1) {
+			if(isleaf) return NULL;
+			else return node;
+		}
+
+		KeyType& k = (*path.begin());
+		while(node) {
+ 			if(k == _Key(node)) {
+				if(_IsLeaf(node)) { // 叶节点					
+					bfound = isleaf;					
+					break;
+				} else { // 非叶节点
+					if(path.size() == 1) {
+						// 最后一个
+						bfound = !isleaf;
+						break;
+					} else {
+						path.pop_front();
+						if(path.size() < 1) break;
+						k = (*path.begin());
+						node = _Left(node);
+					}
+				}				
 			} else {
-				node = _Right(node); // 找兄弟
+				node = _Right(node);
 			}
 		}
+		
+		if(!bfound) {
+			return NULL;
+		}
+
 		return node;
 	}
 
@@ -132,8 +167,8 @@ public:
 		return _where_construct;
 	}
 	// 删除节点
-	void erase(const PathType& path) {
-		NodePtr _where = where(path);
+	void erase(const PathType& path, bool isleaf) {
+		NodePtr _where = Where(path, isleaf);
 		if(NULL  == _where ) {
 			return;
 		}
@@ -160,6 +195,9 @@ public:
 		}
 	}
 
+	void clear() {
+
+	}
 // operator
 public:
 	NodePtr _Root() {
@@ -196,7 +234,7 @@ public:
 		return (*node)._Right;
 	}
 
-	static bool _IsLeaf(NodePtr) {
+	static bool _IsLeaf(NodePtr node) {
 		return (*node)._IsNil;
 	}
 protected:
@@ -207,8 +245,11 @@ protected:
 
 	// 清理树
 	void _tidy() {
-		_destory(_Root());
-		_Header = 0;
+		NodePtr _myheader = _Root();
+		_destory(_Left(_myheader));
+		_destory(_Right(_myheader));
+		_myheader->_Left = 0;
+		_myheader->_Right = 0;	
 	}
 
 	void _destory(NodePtr node) {
@@ -276,6 +317,7 @@ public:
 	typedef typename _MyBase::KeyType KeyType;
 	typedef typename _MyBase::ValueType ValueType;
 	typedef typename _MyBase::PathType PathType;
+	typedef Acf::Delegate< bool(const ValueType&) > TravCallBack;
 
 	class TravClass {
 	public:
@@ -283,7 +325,7 @@ public:
 		~TravClass();
 	};
 
-	typedef bool (*Travsor)(const ValueType&, void* arg);
+	typedef bool (*Travsor)(NodePtr, void*);
 //	typedef typename _MyBase::KeyCompare KeyCompare;
 
 	ZZipTree() 
@@ -293,8 +335,8 @@ public:
 	~ZZipTree() {
 	}
 
-	bool Where(const PathType& path, MapType& out) {
-		NodePtr node = where(path);
+	bool Find(const PathType& path, MapType& out) {
+		NodePtr node = _MyBase::Where(path, true);
 		if(NULL == node) {
 			return false;
 		}
@@ -302,23 +344,55 @@ public:
 		return true;
 	}
 
-	void Trav(Travsor tv, void* arg) {
-		NodePtr myroot = _Root();
-		NodePtr node = _Left(myroot);
-		_Trav(node, tv, arg);
+	void Trav(const PathType& path, Travsor tv, void* arg, bool Recursive) {
+		NodePtr _Where = _MyBase::Where(path);
+		_Trav(_Where, tv, arg, Recursive);
 	}
 
 private:
-	bool _Trav(NodePtr node, Travsor tv, void* arg) {
+	bool _Trav(NodePtr node, Travsor tv, void* arg, bool Recursive) {
 		if(NULL == node) return false; 
 		if(tv) {
-			if(!tv(_Value(node), arg)) {
+			if(!tv(node, arg)) {
 				return false;
 			}
 		}
+		if(Recursive) {
+			_Trav(_Left(node), tv, arg, Recursive);
+		}
 
-		return _Trav(_Left(node)) && _Trav(_Right(node));
+		_Trav(_Right(node), tv, arg, Recursive);
+
+		return true;
 	}
+
+	void _PreOrder(NodePtr node) {
+		if(node) {
+			TravEvent(_Value(node));
+			_PreOrder(_Left(node));
+			_PreOrder(_Right(node));
+		}
+	}
+
+	void _MidOrder(NodePtr node) {
+		if(node) {
+			_MidOrder(_Left(node));
+			TravEvent(_Value(node));
+			_PreOrder(_Right(node));
+		}
+	}
+
+	void _BehindOrder(NodePtr node) {
+		if(node) {
+			_BehindOrder(_Left(node));
+			_BehindOrder(_Right(node));
+			TravEvent(_Value(node));
+		}
+	}
+
+public:
+	TravCallBack TravEvent;
+
 };
 
 
