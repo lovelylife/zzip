@@ -22,11 +22,11 @@ int _tmain(int argc, _TCHAR* argv[]) {
 	
 //	return 0;
 
-	tstring sPath = _T("a/b/c/d/e.htm");
-	ZZipFile::ZZipFileTree::PathType path;
-	ZZipFile::ZZipFileTree::String2Path(sPath, path);
-	tstring sPathOutput;
-	ZZipFile::ZZipFileTree::Path2String(path,sPathOutput);
+// 	tstring sPath = _T("a/b/c/d/e.htm");
+// 	ZZipFile::ZZipFileTree::PathType path;
+// 	ZZipFile::ZZipFileTree::String2Path(sPath, path);
+// 	tstring sPathOutput;
+// 	ZZipFile::ZZipFileTree::Path2String(path,sPathOutput);
 
 	bool bRet = true;
 	// TODO:

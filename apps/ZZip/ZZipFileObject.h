@@ -12,12 +12,10 @@ public:
 	ZZipFileObject();
 	~ZZipFileObject(void);
 
-	bool ZZipPathFromPath( const tstring& sPath);
-	bool isfolder();
-	bool isstream();
+	bool setpath( const tstring& sPath);
+	bool isfolder() const;
 	int64 offset() const;
 	int64 filesize() const;
-	tstring path() const;
 	tstring localpath() const;
 	int32 createtime() const;
 	int32 lastmodify() const;
@@ -25,8 +23,8 @@ public:
 	friend class ZZipFile;
 private: 
 	ZZipFileItem FileItem_;
-	tstring sZZipPath_;			// 路径
-	tstring sLocalPath_;	// 本地路径，如果为空则为ZZip文件文具
+	bool bFolder_;			// 是否是文件夹
+	tstring sLocalPath_;	// 本地路径，如果为空则为ZZip文件
 
 };
 

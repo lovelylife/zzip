@@ -58,15 +58,8 @@ public:
   static const int FilterModeFile		= 0x0001;
   static const int FilterModeFolder		= 0x0002;
   static const int FilterModeAll		= 0x0003;
-
-  typedef std::list<ZZipFileObject*>		ZZipFileObjects;
   
-  typedef bool (*EnumFileFunction)(void* arg, const int ftype, const tstring& sItem);
-
-  struct ZZipFileObjectNode {
-	  std::string sValue;
-	  RefPtr<ZZipFileObject> fileobject;
-  };
+  //typedef bool (*EnumFileFunction)(void* arg, const int ftype, const tstring& sItem);
 
   class ZZipFileTree 
 	: public ZZipTree< tstring, RefPtr<ZZipFileObject> >
@@ -74,7 +67,8 @@ public:
   public:
 	typedef ZZipTree< tstring, RefPtr<ZZipFileObject> > _MyBase;
 	typedef _MyBase::PathType PathType;
-
+	typedef _MyBase::ValueType ValueType;
+	static bool TravFunc(NodePtr, void*);
   // 静态方法
   public:
 	static bool String2Path(const tstring&, PathType&);
@@ -85,14 +79,19 @@ public:
 	ZZipFileTree();
     ~ZZipFileTree();
   };
-  
-  //typedef ZZipTree<std::string, ZZipFileObject> ZZipFileTree;
 
 public:
   // 标准构造函数
   ZZipFile(void);
   // 标准析构函数
   ~ZZipFile(void);
+
+  friend class ZZipFileTree;
+
+// 静态方法
+public:
+  // 删除本地文件夹
+  static bool RemoveDir(const tstring& sLocalDir);
 
 // 方法
 public: 
@@ -121,7 +120,7 @@ public:
   // 判断文件夹是否不存在
   static bool PathIsInValid(const tstring& sPath);
 
-  void EnumItem(const tstring& sZZipFolderPath, int FilterMode , void* arg, EnumFileFunction lpfunc);
+//  void EnumItem(const tstring& sZZipFolderPath, int FilterMode , void* arg, EnumFileFunction lpfunc);
 
   // 通过路径查找文件
   RefPtr<ZZipFileObject> FindFile(const tstring& lpszZZipPath);
@@ -166,7 +165,7 @@ public:
 
 #ifdef _WIN32
   // 添加文件
-  ZZIP_Writer RefPtr<ZZipFileObject> AddFile(const tstring& sZZipPath, IStream* pStream, bool bOverwrite = true);
+  ZZIP_Writer bool AddFile(const tstring& sZZipPath, IStream* pStream, bool bOverwrite = true);
 
 #endif 
   // 删除文件夹
@@ -176,13 +175,15 @@ public:
   ZZIP_Writer bool RenameFile(const tstring& sOldPath, const tstring& sNewPath);
 
 private:
-
+  // 反序列化
   bool Parse(std::iostream* pStream);
-	
-  // 删除本地文件夹
-  bool RemoveDir(const tstring& sLocalDir);
-private:
+  // 序列化ZZipFileObject到文件
+  bool WriteFileObject(RefPtr<ZZipFileObject>);
 
+//   void BeginSerialize();
+//   void EndSerialize();
+
+private:
   // ZZipFile流类型
   int Type_;
 
@@ -198,6 +199,9 @@ private:
   // 缓冲文件，最后将替换成ZZip文件，将原有的删除
   std::ofstream*  StreamWriterPtr_;
 
+  // 存档结构缓冲，最后写入StreamWriterPtr_缓冲文件
+  std::ofstream*  StreamArchiveWriterPtr_;
+
   // 如果为空说明是字符流，否则为文件流
   tstring sZZipFileName_;
 
@@ -206,9 +210,6 @@ private:
 
   // ZZipFile文件头部，跟通常的文件一样，包含了文件的相关信息
   ZZipFileHeader ZZipFileHeader_;
-
-  // 文件对象列表
-  ZZipFileObjects FileObjects_;
 
   // 文件二叉树
   ZZipFileTree FileObjectsTree_;
