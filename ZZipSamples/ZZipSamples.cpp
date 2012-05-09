@@ -27,7 +27,7 @@ int _tmain(int argc, _TCHAR* argv[]) {
 // 	ZZipFile::ZZipFileTree::String2Path(sPath, path);
 // 	tstring sPathOutput;
 // 	ZZipFile::ZZipFileTree::Path2String(path,sPathOutput);
-
+	std::cout << "中国汉字";
 	bool bRet = true;
 	// TODO:
 	// do something
@@ -59,25 +59,28 @@ int _tmain(int argc, _TCHAR* argv[]) {
 //		zzip.EnumFile(_T("/"), 0, EnumFileProc);
 
 		// 读取文件"/4.gif" 保存到 "C:\\tt.gif"
-// 		std::ofstream of(_T("C:\\tt.gif"), std::ios::out|std::ios::binary);
-// 		if(of.good()) {
-// 			const ZZipFileObject* p = zzip.FindFile(_T("/4.gif"));
-// 			char buffer[1024] = {0};
-// 			int64 filesize = p->filesize();
-// 			int64 startpos = 0;
-// 			int64 fcount = filesize;
-// 			while(fcount > 0) {
-// 				int64 ReadBytes = zzip.ReadData(p, startpos, (void*)buffer, 1024);
-// 				if(ReadBytes > 0) {
-// 					fcount -= ReadBytes;
-// 					startpos += ReadBytes;
-// 					of.write(buffer, ReadBytes);
-// 				} else {
-// 					break;
-// 				}
-// 			}
-// 			of.close();
-// 		}
+		RefPtr<ZZipFileObject> p = zzip.FindFile(_T("/4.gif"));
+		if(NULL != p) {
+			std::ofstream of(_T("C:\\tt.gif"), std::ios::out|std::ios::binary);
+			if(of.good()) {
+				char buffer[1024] = {0};
+				int64 filesize = p->filesize();
+				int64 startpos = 0;
+				int64 fcount = filesize;
+				while(fcount > 0) {
+					int64 ReadBytes = zzip.ReadData(p, startpos, (void*)buffer, 1024);
+					if(ReadBytes > 0) {
+						fcount -= ReadBytes;
+						startpos += ReadBytes;
+						of.write(buffer, ReadBytes);
+					} else {
+						break;
+					}
+				}
+				of.close();
+			}
+		}
+		
 		zzip.Close();
 	}
 	return 0;

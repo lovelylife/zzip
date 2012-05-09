@@ -95,7 +95,8 @@ public:
 
 	NodePtr Where(PathType path, bool isleaf = false) {
 		// 查找path所在节点
-		NodePtr node = _Root();
+		NodePtr node = _Left(_Root());
+		if(NULL == node) return node;
 		//PathType::const_iterator cit = path.begin();
 		bool bfound = false;
 		if(path.size() < 1) {
@@ -103,9 +104,8 @@ public:
 			else return node;
 		}
 
-		KeyType& k = (*path.begin());
 		while(node) {
- 			if(k == _Key(node)) {
+ 			if((*path.begin()) == _Key(node)) {
 				if(_IsLeaf(node)) { // 叶节点					
 					bfound = isleaf;					
 					break;
@@ -117,10 +117,9 @@ public:
 					} else {
 						path.pop_front();
 						if(path.size() < 1) break;
-						k = (*path.begin());
 						node = _Left(node);
 					}
-				}				
+				}
 			} else {
 				node = _Right(node);
 			}
@@ -213,12 +212,16 @@ public:
 	}
 
 	static PathType _Path(NodePtr node) {
-		NodePtr _P = _Parent(node);
 		PathType stack;
-		while(_P) {
-			stack.push_back(_Key(_P));
-			_P = _Parent(_P);
+		if(NULL != node) {
+			NodePtr _P = _Parent(node);
+			while(_P && _Parent(_P) ) {
+				stack.push_front(_Key(_P));
+				_P = _Parent(_P);
+			}
+			stack.push_back(_Key(node));
 		}
+		
 		return stack;
 	}
 
