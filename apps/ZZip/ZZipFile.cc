@@ -16,11 +16,37 @@
 #include <atlconv.h>
 #include <shlwapi.h>
 #include <shellapi.h>
+#include <stdlib.h>
 
 #endif
 
 static const TCHAR ZZipTmpFileName[]	= _T(".__zzip__");
 static const TCHAR ZZipTmpFolderName[]  = _T(".cache\\");
+
+// int str2wstr(const std::string& sInput, std::wstring& sOutput) {
+// 	size_t len = sInput.size()+1;
+// 	size_t converted = 0;
+// 	wchar_t *WStr;
+// 	WStr=(wchar_t*)malloc(len*sizeof(wchar_t));
+// 	errno_t err = mbstowcs_s(&converted, WStr, len, sInput.c_str(), _TRUNCATE);
+// 	sOutput.clear();
+// 	sOutput.append(WStr);
+// 	free(WStr);
+// 	return err;
+// }
+
+// int wstr2str(const std::wstring& sInput, std::string& sOutput) {
+// 
+// 	size_t len = sInput.size()+1;
+// 	size_t converted = 0;
+// 	char *CStr;
+// 	CStr=(char*)malloc(len*sizeof(char));
+// 	errno_t err = wcstombs_s(&converted, CStr, len, sInput.c_str(), _TRUNCATE);
+// 	sOutput.clear();
+// 	sOutput.append(CStr);
+// 	free(CStr);ERANGE
+// 	return err;
+// }
 
 bool ZZipFile::PathIsInValid(const tstring& sPath ) {
 	return (_taccess(sPath.c_str(), 0) == -1);
@@ -200,7 +226,8 @@ bool ZZipFile::Parse( std::iostream* pStream )
 
 			// std::cout << "file position: " << StreamReaderPtr_->tellg() << std::endl;
 			if(!sTemp.empty()) {
-				tstring sPath = tstring(CA2T(sTemp.c_str()));
+				tstring sPath = CA2T(sTemp.c_str());;
+				//_tprintf(_T("file: %s\n"), sPath);
 				FileObjectPtr->setpath(sPath);
 				//@todo
 				ZZipFileTree::PathType pathtype;
@@ -218,10 +245,6 @@ bool ZZipFile::Parse( std::iostream* pStream )
 			}
 		}
 	}
-
-	// for test
-	ZZipFileTree::PathType path;
-	FileObjectsTree_.Trav(path, ZZipFileTree::TravFunc, (void*)this, true);
 
 	return true;
 }
@@ -243,8 +266,22 @@ bool ZZipFile::Save() {
 	// 先移动文件头大小位置
 	StreamWriterPtr_->seekp(sizeof(ZZipFileHeader), std::ios::beg);
 
+	// 清空Archive缓存
+	ArchiveWriter_.flush();
+
 	// 遍历目录树，序列化
 	FileObjectsTree_.Trav(ZZipFileTree::PathType(), ZZipFileTree::TravFunc, (void*)this, true);
+	
+ 	// 设置文件目录结构位置
+	ZZipFileHeader_.offset  = StreamWriterPtr_->tellp();
+
+	// 将缓存写入ZZip文件
+	{
+		std::string sArchive = ArchiveWriter_.str();
+		StreamWriterPtr_->write(sArchive.c_str(), sArchive.size());
+		ArchiveWriter_.flush();
+	}
+	
 
 // 	// 写入文件数据
 // 	char buffer[2048];
@@ -299,35 +336,36 @@ bool ZZipFile::Save() {
 // 		StreamWriterPtr_->write(szPath, zzipfile->FileItem_.namelength );
 // 	}
 // 
-// 	// 写文件头
-// 	StreamWriterPtr_->seekp(0, std::ios::beg);
-// 	StreamWriterPtr_->write((char*)&ZZipFileHeader_, sizeof(ZZipFileHeader));
-// 	StreamWriterPtr_->close();
-// 
-// 	//清理不需要的缓存目录和文件夹
-// 	//如果存在缓存文件夹则应该删除掉
-// 	if(!PathIsInValid(sCacheDir_)) {
-// 		RemoveDir(sCacheDir_);
-// 	}
-// 
-// 	// 删除修改前的ZZip文件，用临时缓冲文件覆盖
-// 	((std::fstream*)StreamPtr_)->close();
-// 	::_tremove(sZZipFileName_.c_str());
-// 	// remove(CT2A(sZZipFileName_.c_str()));
-// 
-// 	tstring sTempFileName = sZZipFileName_;
-// 	sTempFileName += ZZipTmpFileName;
-// 	
-// 	
-// 	// 使用当前名称
-// 	int ReturnCode = _trename(sTempFileName.c_str(), sZZipFileName_.c_str());
-// 
-// 	if(ReturnCode != 0) {
-// 		std::cout << "rename: error(code:" << ReturnCode << ")" <<  std::endl;
-// 		return false;
-// 	}
+	// 写文件头
+	StreamWriterPtr_->seekp(0, std::ios::beg);
+	StreamWriterPtr_->write((char*)&ZZipFileHeader_, sizeof(ZZipFileHeader));
+	StreamWriterPtr_->close();
 
-	return true;
+	//清理不需要的缓存目录和文件夹
+	//如果存在缓存文件夹则应该删除掉
+	if(!PathIsInValid(sCacheDir_)) {
+		RemoveDir(sCacheDir_);
+	}
+
+	// 删除修改前的ZZip文件，用临时缓冲文件覆盖
+	((std::fstream*)StreamPtr_)->close();
+	::_tremove(sZZipFileName_.c_str());
+	StreamPtr_ = NULL;
+	// remove(CT2A(sZZipFileName_.c_str()));
+
+	tstring sTempFileName = sZZipFileName_;
+	sTempFileName += ZZipTmpFileName;
+	
+	
+	// 使用当前名称
+	int ReturnCode = _trename(sTempFileName.c_str(), sZZipFileName_.c_str());
+
+	if(ReturnCode != 0) {
+		std::cout << "rename: error(code:" << ReturnCode << ")" <<  std::endl;
+		return false;
+	}
+
+	return Open(sZZipFileName_, OpenMode_);
 }
 
 void ZZipFile::RemoveFile( const tstring& sZZipPath )
@@ -522,7 +560,7 @@ RefPtr<ZZipFileObject> ZZipFile::FindFile( const tstring& sZZipPath ) {
 	RefPtr<ZZipFileObject> p;
 	ZZipFileTree::PathType path;
 	ZZipFileTree::String2Path(sZZipPath, path);
-	FileObjectsTree_.Where(path, p);
+	FileObjectsTree_.Find(path, p);
 	return p;
 }
 
@@ -598,35 +636,74 @@ tstring ZZipFile::FileName() const
 	return sZZipFileName_;
 }
 
-bool ZZipFile::WriteFileObject( RefPtr<ZZipFileObject> zzipfile)
-{
+bool ZZipFile::WriteFileObject( const ZZipFileTree::PathType& path, RefPtr<ZZipFileObject> zzipfile) {
 	if(NULL == zzipfile)  return false;
-	// 读取本地文件
-	std::ifstream f(zzipfile->sLocalPath_.c_str(), std::ios::in|std::ios::binary);
-	if(!f.good()) { 
-		zzipfile->FileItem_.filesize = 0;
-		zzipfile->FileItem_.namelength = 0;
-		return true; 
-	}
+	if(!zzipfile->isfolder()) {
+		char buffer[2048];
+		std::streamsize  offset = StreamWriterPtr_->tellp();
+		if(zzipfile->sLocalPath_.empty()) {
+			// 读取文件数据写入缓存
+			int64 filesize = zzipfile->filesize();
+			int64 startpos = 0;
+			int64 fcount = filesize;
+			while(fcount > 0) {
+				int64 ReadBytes = ReadData(zzipfile, startpos, (void*)buffer, 1024);
+				if(ReadBytes > 0) {
+					fcount -= ReadBytes;
+					startpos += ReadBytes;
+					StreamWriterPtr_->write(buffer, ReadBytes);
+				} else {
+					break;
+				}
+			}
+			zzipfile->FileItem_.offset = offset;
+		} else {
+			// 读取本地文件
+			std::ifstream f(zzipfile->sLocalPath_.c_str(), std::ios::in|std::ios::binary);
+			if(!f.good()) { 
+				zzipfile->FileItem_.filesize = 0;
+				zzipfile->FileItem_.namelength = 0;
+				zzipfile->FileItem_.offset = 0;
+				return true; 
+			}
 
-	zzipfile->FileItem_.offset = StreamWriterPtr_->tellp();
+			// 记录文件偏移
+			zzipfile->FileItem_.offset = offset;
 
-	char buffer[2048];
-	// 计算文件大小
-	std::streamsize filesize = 0;
-	f.seekg(std::ios::beg, std::ios::end);
-	std::streamsize filecount = f.tellg();
-	zzipfile->FileItem_.filesize = filecount;
-	f.seekg(0,std::ios::beg);
-	// 读取文件内容并写入Writer
-	while((!f.eof()) && (filecount > 0)) {
-		memset(buffer, 0, sizeof(buffer));
-		f.read(buffer, sizeof(buffer));
-		std::streamsize ReadBytes = f.gcount();
-		StreamWriterPtr_->write(buffer, ReadBytes);
-		filecount -= ReadBytes;
+			// 计算文件大小
+			std::streamsize filesize = 0;
+			f.seekg(std::ios::beg, std::ios::end);
+			std::streamsize filecount = f.tellg();
+			zzipfile->FileItem_.filesize = filecount;
+			f.seekg(0,std::ios::beg);
+			// 读取文件内容并写入Writer
+			while((!f.eof()) && (filecount > 0)) {
+				memset(buffer, 0, sizeof(buffer));
+				f.read(buffer, sizeof(buffer));
+				std::streamsize ReadBytes = f.gcount();
+				StreamWriterPtr_->write(buffer, ReadBytes);
+				filecount -= ReadBytes;
+			}
+			f.close();
+		}	
 	}
-	f.close();
+	
+	//char szPath[_MAX_PATH] = {0};
+	std::streamsize sizecount = 0;
+	tstring sZZipPath;
+	ZZipFileTree::Path2String(path, sZZipPath);
+	// 写入目录结构
+	//zzipfile->FileItem_.namelength = WideCharToMultiByte(CP_ACP, 0, sZZipPath.c_str(), wcslen(sZZipPath.c_str()), szPath, _MAX_PATH, NULL, NULL);
+	std::string sConvString;
+	sConvString = CT2A(sZZipPath.c_str());
+
+	printf("write file object: %s\n", sConvString.c_str());
+	zzipfile->FileItem_.namelength = strlen(sConvString.c_str());
+	if(zzipfile->FileItem_.namelength > 1) { 
+		sizecount += zzipfile->FileItem_.namelength;
+		ArchiveWriter_.write((const char*)&zzipfile->FileItem_, sizeof(ZZipFileItem));
+		ArchiveWriter_.write(sConvString.c_str(), zzipfile->FileItem_.namelength );
+	}
 	return true;
 }
 
@@ -708,11 +785,12 @@ bool ZZipFile::ZZipFileTree::TravFunc(NodePtr node, void *arg )
 		if(_IsLeaf(node) || ( !_IsLeaf(node) && (NULL==_Left(node)))) {
 			// 如果没有子节点的目录，需要保存 
 			const ValueType& v = _Value(node);
-			_tprintf(_T("file: %s\n\r"), v.first.c_str());
-			_this->WriteFileObject(v.second);
+			tstring sPath;
+			Path2String(_Path(node), sPath);
+			//_tprintf(_T("file: %s\n\r"), sPath.c_str());
+			_this->WriteFileObject( _Path(node), v.second);
 		}
 	}
-	//const ValueType& v = _Value(node);
-	//_tprintf(_T("file: %s\n\r"), v.first.c_str());
+
 	return true;
 }

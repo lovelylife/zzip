@@ -23,14 +23,17 @@
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include <list>
-#include <fstream>
+
 #include "ZZipTree.h"
 #include "ZZipFileObject.h"
 
 #ifdef _WIN32
 #include <objidl.h>
 #endif
+
+#include <fstream>
+#include <sstream>
+
 
 #ifndef ZZIP_Writer
 #define ZZIP_Writer
@@ -177,8 +180,9 @@ public:
 private:
   // 反序列化
   bool Parse(std::iostream* pStream);
+
   // 序列化ZZipFileObject到文件
-  bool WriteFileObject(RefPtr<ZZipFileObject>);
+  bool WriteFileObject(const ZZipFileTree::PathType& path, RefPtr<ZZipFileObject>);
 
 //   void BeginSerialize();
 //   void EndSerialize();
@@ -200,7 +204,7 @@ private:
   std::ofstream*  StreamWriterPtr_;
 
   // 存档结构缓冲，最后写入StreamWriterPtr_缓冲文件
-  std::ofstream*  StreamArchiveWriterPtr_;
+  std::stringstream  ArchiveWriter_;
 
   // 如果为空说明是字符流，否则为文件流
   tstring sZZipFileName_;
