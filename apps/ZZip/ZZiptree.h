@@ -124,23 +124,19 @@ public:
 				node = _Right(node);
 			}
 		}
-		
-		if(!bfound) {
-			return NULL;
-		}
-
+		if(!bfound) { return NULL; }
 		return node;
 	}
 
 	// 构造路径，如果最后一个是叶节点则失败
 	NodePtr kdir(const PathType& path) {
-		NodePtr _rootnode = _Root();
-		NodePtr _wherenode = _rootnode;
-		NodePtr _where_construct = _rootnode;
+		NodePtr _where = _Root();
+		NodePtr _where_construct = _where;
 		PathType::const_iterator cit = path.begin();
-		for(; cit != path.end() && (NULL != _wherenode); cit++) {
-			// 是否存在（*cit）子节点
-			NodePtr _temp_node = _wherenode;
+		// 逐层遍历
+		for(; cit != path.end() && (NULL != _where); cit++) {
+			// 进入子节点继续匹配
+			NodePtr _temp_node = _Left(_where);
 			bool node_exist = false;
 			while(NULL != _temp_node) {
 				if((*cit) == _Key(_temp_node)) {
@@ -148,15 +144,17 @@ public:
 					node_exist = true;
 					break;
 				}
-				_temp_node = _Right(_temp_node); // 查找兄弟
+				// 查找兄弟
+				_temp_node = _Right(_temp_node);
 			}
-			if(!node_exist) {	// 构造				
-				_where_construct = _wherenode;
+			if(!node_exist) {
 				break;
 			} else {
-				_wherenode = _Left(_wherenode);
+				// 从当前匹配节点继续匹配
+				_where = _temp_node; 
 			}
 		}
+		_where_construct = _where;
 		
 		// 从头cit和_where_construct 开始构造非叶节点
 		for(; cit != path.end(); cit++) {
@@ -266,12 +264,12 @@ protected:
 	NodePtr _buy_node(const ValueType& v, NodePtr parent, bool isnil) {
 		NodePtr _newnode = _MyBase::_buy(v, parent, isnil);
 		if(parent) {
-			if(_Left(parent)) {
-				NodePtr n = _Left(parent);
-				while(_Right(n)){
-					n = _Right(n);
+			if(_Left(parent)) { // 存在子节点
+				NodePtr child = _Left(parent);
+				while(_Right(child)){
+					child = _Right(child);
 				};
-				n->_Right = _newnode;
+				child->_Right = _newnode;
 			} else {
 				parent->_Left = _newnode;
 			}
