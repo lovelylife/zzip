@@ -268,7 +268,7 @@ bool ZZipFile::Save() {
 
 	// 清空Archive缓存
 	ArchiveWriter_.flush();
-setlocale(LC_ALL, ".936");
+///setlocale(LC_ALL, ".936");
 	// 遍历目录树，序列化
 	FileObjectsTree_.Trav(ZZipFileTree::PathType(), ZZipFileTree::TravFunc, (void*)this, true);
 	
