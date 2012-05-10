@@ -268,7 +268,7 @@ bool ZZipFile::Save() {
 
 	// 清空Archive缓存
 	ArchiveWriter_.flush();
-
+setlocale(LC_ALL, ".936");
 	// 遍历目录树，序列化
 	FileObjectsTree_.Trav(ZZipFileTree::PathType(), ZZipFileTree::TravFunc, (void*)this, true);
 	
@@ -697,7 +697,7 @@ bool ZZipFile::WriteFileObject( const ZZipFileTree::PathType& path, RefPtr<ZZipF
 	std::string sConvString;
 	sConvString = CT2A(sZZipPath.c_str());
 
-	printf("write file object: %s\n", sConvString.c_str());
+//	printf("write file object: %s\n", sConvString.c_str());
 	zzipfile->FileItem_.namelength = strlen(sConvString.c_str());
 	if(zzipfile->FileItem_.namelength > 1) { 
 		sizecount += zzipfile->FileItem_.namelength;
@@ -787,7 +787,8 @@ bool ZZipFile::ZZipFileTree::TravFunc(NodePtr node, void *arg )
 			const ValueType& v = _Value(node);
 			tstring sPath;
 			Path2String(_Path(node), sPath);
-			//_tprintf(_T("file: %s\n\r"), sPath.c_str());
+			
+			_tprintf(_T("file: %s\n\r"), sPath.c_str());
 			_this->WriteFileObject( _Path(node), v.second);
 		}
 	}
