@@ -318,16 +318,8 @@ public:
 	typedef typename _MyBase::KeyType KeyType;
 	typedef typename _MyBase::ValueType ValueType;
 	typedef typename _MyBase::PathType PathType;
-	typedef Acf::Delegate< bool(const ValueType&) > TravCallBack;
-
-	class TravClass {
-	public:
-		TravClass();
-		~TravClass();
-	};
-
-	typedef bool (*Travsor)(NodePtr, void*);
-//	typedef typename _MyBase::KeyCompare KeyCompare;
+	typedef Acf::Delegate< bool(const PathType&, const ValueType&) > ValueTravEvent;
+	typedef Acf::Delegate< bool(NodePtr) > NodeTravEvent;
 
 	ZZipTree() 
 		: _MyBase() {
@@ -345,55 +337,64 @@ public:
 		return true;
 	}
 
-	void Trav(const PathType& path, Travsor tv, void* arg, bool Recursive) {
+// 	void Trav(const PathType& path, bool Recursive, ValueTravEvent evt) {
+// 		NodePtr _Where = _MyBase::Where(path);
+// 		_Trav(_Where, Recursive, evt);
+// 	}
+
+	void NodeTrav(const PathType& path, NodeTravEvent evt, bool Recursive = true) {
 		NodePtr _Where = _MyBase::Where(path);
-		_Trav(_Where, tv, arg, Recursive);
+		_NodeTrav(_Where, evt, Recursive);
 	}
 
 private:
-	bool _Trav(NodePtr node, Travsor tv, void* arg, bool Recursive) {
-		if(NULL == node) return false; 
-		if(tv) {
-			if(!tv(node, arg)) {
-				return false;
-			}
-		}
-		if(Recursive) {
-			_Trav(_Left(node), tv, arg, Recursive);
-		}
+// 	bool _Trav(NodePtr node, bool Recursive, ValueTravEvent evt) {
+// 		if(NULL == node) return false; 
+// 		if(!evt(_Path(node), _Value(node))) {
+// 			return false;
+// 		}
+// 
+// 		if(Recursive) {
+// 			_Trav(_Left(node), Recursive, evt);
+// 		}
+// 
+// 		_Trav(_Right(node), Recursive, evt);
+// 
+// 		return true;
+// 	}
 
-		_Trav(_Right(node), tv, arg, Recursive);
+	bool _NodeTrav(NodePtr node, NodeTravEvent evt, bool Recursive) {
+		if(NULL == node) return false; 
+		if(!evt(node)) { return false; }
+		if(Recursive) {	_NodeTrav(_Left(node), evt, Recursive);	}
+		_NodeTrav(_Right(node), evt, Recursive);
 
 		return true;
 	}
 
-	void _PreOrder(NodePtr node) {
-		if(node) {
-			TravEvent(_Value(node));
-			_PreOrder(_Left(node));
-			_PreOrder(_Right(node));
-		}
-	}
-
-	void _MidOrder(NodePtr node) {
-		if(node) {
-			_MidOrder(_Left(node));
-			TravEvent(_Value(node));
-			_PreOrder(_Right(node));
-		}
-	}
-
-	void _BehindOrder(NodePtr node) {
-		if(node) {
-			_BehindOrder(_Left(node));
-			_BehindOrder(_Right(node));
-			TravEvent(_Value(node));
-		}
-	}
-
-public:
-	TravCallBack TravEvent;
-
+// 	void _PreOrder(NodePtr node) {
+// 		if(node) {
+// 			//TravEvent(_Value(node));
+// 			_PreOrder(_Left(node));
+// 			_PreOrder(_Right(node));
+// 		}
+// 	}
+// 
+// 	void _MidOrder(NodePtr node) {
+// 		if(node) {
+// 			_MidOrder(_Left(node));
+// 			//TravEvent(_Value(node));
+// 			_PreOrder(_Right(node));
+// 		}
+// 	}
+// 
+// 	void _BehindOrder(NodePtr node) {
+// 		if(node) {
+// 			_BehindOrder(_Left(node));
+// 			_BehindOrder(_Right(node));
+// 			//TravEvent(_Value(node));
+// 		}
+// 	}
 };
 
 

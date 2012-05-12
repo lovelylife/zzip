@@ -6,7 +6,16 @@
 //#include "Color.h"
 #include <atlconv.h>
 
-bool EnumFileProc(void*, const tstring&);
+// 枚举文件
+class EnumItems {
+public:
+	bool EnumFile(const ZZipFile::ZZipFileTree::PathType& path, const ZZipFile::ZZipFileTree::ValueType&) {
+		tstring sPath;
+		ZZipFile::ZZipFileTree::Path2String(path, sPath);
+		_tprintf(_T("EnumFile() file: %s\n"), sPath.c_str());
+		return true;
+	}
+};
 
 int _tmain(int argc, _TCHAR* argv[]) {
 
@@ -27,7 +36,6 @@ int _tmain(int argc, _TCHAR* argv[]) {
 // 	ZZipFile::ZZipFileTree::String2Path(sPath, path);
 // 	tstring sPathOutput;
 // 	ZZipFile::ZZipFileTree::Path2String(path,sPathOutput);
-	std::cout << "中国汉字";
 	bool bRet = true;
 	// TODO:
 	// do something
@@ -56,7 +64,11 @@ int _tmain(int argc, _TCHAR* argv[]) {
 	if(zzip.Open(argv[1])) {
 
 		// 枚举文件
-//		zzip.EnumFile(_T("/"), 0, EnumFileProc);
+		EnumItems e;
+		ZZipFile::ZZipFileTree::ValueTravEvent evt;
+		evt += std::make_pair(&e, &EnumItems::EnumFile);
+		zzip.EnumItem(_T("/"), evt, false);
+		evt -= std::make_pair(&e, &EnumItems::EnumFile);
 
 		// 读取文件"/4.gif" 保存到 "C:\\tt.gif"
 		RefPtr<ZZipFileObject> p = zzip.FindFile(_T("/4.gif"));
@@ -84,10 +96,4 @@ int _tmain(int argc, _TCHAR* argv[]) {
 		zzip.Close();
 	}
 	return 0;
-}
-
-bool EnumFileProc(void*, const tstring& sFileName) {
-
-	std::wcout << sFileName.c_str() << std::endl;
-	return true;
 }

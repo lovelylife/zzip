@@ -71,16 +71,24 @@ public:
 	typedef ZZipTree< tstring, RefPtr<ZZipFileObject> > _MyBase;
 	typedef _MyBase::PathType PathType;
 	typedef _MyBase::ValueType ValueType;
-	static bool TravFunc(NodePtr, void*);
+	typedef _MyBase::ValueTravEvent ValueTravEvent;
   // 静态方法
   public:
 	static bool String2Path(const tstring&, PathType&);
 	static bool Path2String(const PathType&, tstring&);
+  
+  public:
+    void DoTrav(const PathType&, const ValueTravEvent&, bool Recursive=true);
+    bool ZZipTrav(NodePtr);
 
   // 构造析构
   public:
 	ZZipFileTree();
     ~ZZipFileTree();
+	
+  private:
+	  _MyBase::NodeTravEvent ZZipTravEvent;
+	  ValueTravEvent ZZipValueTravEvent;
   };
 
 public:
@@ -123,7 +131,8 @@ public:
   // 判断文件夹是否不存在
   static bool PathIsInValid(const tstring& sPath);
 
-//  void EnumItem(const tstring& sZZipFolderPath, int FilterMode , void* arg, EnumFileFunction lpfunc);
+  // 枚举文件或者文件夹
+  void EnumItem(const tstring& sZZipFolderPath, const ZZipFileTree::ValueTravEvent& evt, bool Recursive = true);
 
   // 通过路径查找文件
   RefPtr<ZZipFileObject> FindFile(const tstring& lpszZZipPath);
@@ -178,14 +187,18 @@ public:
   ZZIP_Writer bool RenameFile(const tstring& sOldPath, const tstring& sNewPath);
 
 private:
+
   // 反序列化
   bool Parse(std::iostream* pStream);
 
   // 序列化ZZipFileObject到文件
-  bool WriteFileObject(const ZZipFileTree::PathType& path, RefPtr<ZZipFileObject>);
+  bool WriteFileObject(const ZZipFileTree::PathType& path, const ZZipFileTree::ValueType&);
 
 //   void BeginSerialize();
 //   void EndSerialize();
+
+private:
+  ZZipFileTree::ValueTravEvent WriteFileObjectEvent;
 
 private:
   // ZZipFile流类型
