@@ -3,7 +3,7 @@
 #define __TREE_H__
 
 #include <list>
-#include "utils/AcfDelegate.h"
+#include "AcfDelegate.h"
 
 template<class _Traits>
 class _tree_node : public _Traits {

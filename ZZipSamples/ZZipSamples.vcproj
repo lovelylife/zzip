@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../third_party;../base;../apps/ZZip;D:\Developing\VCode\Projects\QUI\QUILib\include"
+				AdditionalIncludeDirectories="../third_party;../base;../ZZipLib;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;_STATIC_LINK;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"

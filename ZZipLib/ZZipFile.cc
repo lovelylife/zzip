@@ -4,20 +4,17 @@
 #include "ref_counted.h"
 #include <iostream>
 #include <fstream>
-
 #include <algorithm>
+#include <stdlib.h>
 #include <io.h>
 #include <strstream>
 #include "ZZipFile.h"
-#include "ZZipCommand.h"
 
 #ifdef _WIN32
 #include <atlbase.h>
 #include <atlconv.h>
 #include <shlwapi.h>
 #include <shellapi.h>
-#include <stdlib.h>
-
 #endif
 
 static const TCHAR ZZipTmpFileName[]	= _T(".__zzip__");
