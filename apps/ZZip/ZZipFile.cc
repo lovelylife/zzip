@@ -61,9 +61,12 @@ ZZipFile::ZZipFile(void)
 {
 	memset(&ZZipFileHeader_, 0, sizeof(ZZipFileHeader));
 	strncpy(ZZipFileHeader_.sig, ZZIP_SIG, ZZIP_SIG_LEN);
+	// 绑定事件
+	WriteFileObjectEvent += std::make_pair(this, &ZZipFile::WriteFileObject);
 }
 
 ZZipFile::~ZZipFile(void) {
+	WriteFileObjectEvent += std::make_pair(this, &ZZipFile::WriteFileObject);
 	if(StreamPtr_ != NULL) {
 		delete StreamPtr_;
 		StreamPtr_ = NULL;
@@ -224,10 +227,8 @@ bool ZZipFile::Parse( std::iostream* pStream )
 				restsize -= pStream->gcount(); 
 			}
 
-			// std::cout << "file position: " << StreamReaderPtr_->tellg() << std::endl;
 			if(!sTemp.empty()) {
 				tstring sPath = CA2T(sTemp.c_str());;
-				//_tprintf(_T("file: %s\n"), sPath);
 				FileObjectPtr->setpath(sPath);
 				//@todo
 				ZZipFileTree::PathType pathtype;
@@ -237,7 +238,6 @@ bool ZZipFile::Parse( std::iostream* pStream )
 				} else {
 					FileObjectsTree_.insert(pathtype, FileObjectPtr);
 				}
-				//FileObjects_.push_back(FileObjectPtr);
 			}
 
 			if(pStream->eof() || (restsize <= 0)) {
@@ -268,10 +268,10 @@ bool ZZipFile::Save() {
 
 	// 清空Archive缓存
 	ArchiveWriter_.flush();
-///setlocale(LC_ALL, ".936");
+
 	// 遍历目录树，序列化
-	FileObjectsTree_.Trav(ZZipFileTree::PathType(), ZZipFileTree::TravFunc, (void*)this, true);
-	
+	FileObjectsTree_.DoTrav(ZZipFileTree::PathType(),  WriteFileObjectEvent, true);
+
  	// 设置文件目录结构位置
 	ZZipFileHeader_.offset  = StreamWriterPtr_->tellp();
 
@@ -282,60 +282,6 @@ bool ZZipFile::Save() {
 		ArchiveWriter_.flush();
 	}
 	
-
-// 	// 写入文件数据
-// 	char buffer[2048];
-// 	ZZipFileObjects::iterator it = FileObjects_.begin();
-// 	for(; it != FileObjects_.end(); it++) {
-// 		RefPtr<ZZipFileObject> zzipfile = (*it);
-// 		// 记录文件偏移量
-// 		
-// 		// 读取本地文件
-// 		std::ifstream f(zzipfile->sLocalPath_.c_str(), std::ios::in|std::ios::binary);
-// 		if(!f.good()) { 
-// 			zzipfile->FileItem_.filesize = 0;
-// 			zzipfile->FileItem_.namelength = 0;
-// 			continue; 
-// 		}
-// 
-// 		zzipfile->FileItem_.offset = StreamWriterPtr_->tellp();
-// 		
-// 		// 计算文件大小
-// 		std::streamsize filesize = 0;
-// 		f.seekg(std::ios::beg, std::ios::end);
-// 		zzipfile->FileItem_.filesize = f.tellg();
-// 		f.seekg(0,std::ios::beg);
-// 		std::streamsize filecount = static_cast<std::streamsize>(zzipfile->FileItem_.filesize);
-// 		// 读取文件内容并写入Writer
-// 		while((!f.eof()) && (filecount > 0)) {
-// 			memset(buffer, 0, sizeof(buffer));
-// 			f.read(buffer, sizeof(buffer));
-// 			std::streamsize ReadBytes = f.gcount();
-// 			StreamWriterPtr_->write(buffer, ReadBytes);
-// 			filecount -= ReadBytes;
-// 		}
-// 		f.close();
-// 	}
-// 
-// 	// 设置文件目录结构位置
-// 	ZZipFileHeader_.offset  = StreamWriterPtr_->tellp();
-// 	it = FileObjects_.begin();
-// 	char szPath[_MAX_PATH] = {0};
-// 	std::streamsize sizecount = 0;
-// 
-// 	// 写入目录结构
-// 	for(; it != FileObjects_.end(); it++) {
-// 		RefPtr<ZZipFileObject> zzipfile=(*it); 
-// 		//zzipfile->FileItem_.namelen = zzipfile->sPath_.size();
-// 		zzipfile->FileItem_.namelength = WideCharToMultiByte(CP_ACP, 0, zzipfile->sZZipPath_.c_str(), wcslen(zzipfile->sZZipPath_.c_str()), szPath, _MAX_PATH, NULL, NULL);
-// 		if(zzipfile->FileItem_.namelength < 1) { 
-// 			continue; 
-// 		}
-// 		sizecount += zzipfile->FileItem_.namelength;
-// 		StreamWriterPtr_->write((const char*)&zzipfile->FileItem_, sizeof(ZZipFileItem));
-// 		StreamWriterPtr_->write(szPath, zzipfile->FileItem_.namelength );
-// 	}
-// 
 	// 写文件头
 	StreamWriterPtr_->seekp(0, std::ios::beg);
 	StreamWriterPtr_->write((char*)&ZZipFileHeader_, sizeof(ZZipFileHeader));
@@ -354,8 +300,7 @@ bool ZZipFile::Save() {
 	// remove(CT2A(sZZipFileName_.c_str()));
 
 	tstring sTempFileName = sZZipFileName_;
-	sTempFileName += ZZipTmpFileName;
-	
+	sTempFileName += ZZipTmpFileName;	
 	
 	// 使用当前名称
 	int ReturnCode = _trename(sTempFileName.c_str(), sZZipFileName_.c_str());
@@ -453,12 +398,6 @@ bool ZZipFile::AddFile(const tstring& sZZipPath, IStream* pStream, bool bOverwri
 void ZZipFile::Close() {
 	if(StreamPtr_ == NULL) return;
 
-// 	ZZipFileObjects::iterator it = FileObjects_.begin();
-// 	for(; it != FileObjects_.end(); it++) {
-// 		(*it)->Release();
-// 	}
-
-	
 	// 处理文件类型的关闭，需要清理一些临时缓冲文件和目录
 	if(Type_ == TypeFile) {
 
@@ -483,7 +422,6 @@ void ZZipFile::Close() {
 			_tremove(sTempFileName.c_str());
 		}
 
-
 		if(((std::fstream*)StreamPtr_)->is_open()) {
 			StreamPtr_->clear();
 			((std::fstream*)StreamPtr_)->close();
@@ -494,8 +432,8 @@ void ZZipFile::Close() {
 		delete StreamPtr_;
 		StreamPtr_ = NULL;
 	}
-	
-	//FileObjects_.clear();	
+
+	FileObjectsTree_.clear();
 }
 
 bool ZZipFile::AddFolder( tstring sZZipPath, tstring sLocalFolder )
@@ -636,7 +574,8 @@ tstring ZZipFile::FileName() const
 	return sZZipFileName_;
 }
 
-bool ZZipFile::WriteFileObject( const ZZipFileTree::PathType& path, RefPtr<ZZipFileObject> zzipfile) {
+bool ZZipFile::WriteFileObject( const ZZipFileTree::PathType& path, const ZZipFileTree::ValueType& v) {
+	RefPtr<ZZipFileObject> zzipfile = v.second;
 	if(NULL == zzipfile)  return false;
 	if(!zzipfile->isfolder()) {
 		char buffer[2048];
@@ -693,7 +632,6 @@ bool ZZipFile::WriteFileObject( const ZZipFileTree::PathType& path, RefPtr<ZZipF
 	tstring sZZipPath;
 	ZZipFileTree::Path2String(path, sZZipPath);
 	// 写入目录结构
-	//zzipfile->FileItem_.namelength = WideCharToMultiByte(CP_ACP, 0, sZZipPath.c_str(), wcslen(sZZipPath.c_str()), szPath, _MAX_PATH, NULL, NULL);
 	std::string sConvString;
 	sConvString = CT2A(sZZipPath.c_str());
 
@@ -708,33 +646,27 @@ bool ZZipFile::WriteFileObject( const ZZipFileTree::PathType& path, RefPtr<ZZipF
 }
 
 
-// void ZZipFile::EnumItem( const tstring& sZZipFolderPath, int FilterMode, void* arg, EnumFileFunction lpfunc )
-// {
-// 	if(!sZZipFolderPath.empty()) {
-// 		tstring sTargetPath = sZZipFolderPath;
-// 		std::replace(sTargetPath.begin(), sTargetPath.end(), _T('\\'), _T('/'));
-// 		if(sTargetPath[sTargetPath.size()-1] != _T('/')) {
-// 			sTargetPath.append(1, _T('/'));
-// 		}
-// 
-// 		ZZipFileObjects::iterator it = FileObjects_.begin();
-// 		for(; it != FileObjects_.end(); it++) {
-// 			RefPtr<ZZipFileObject> object = (*it);
-// 			if(object->sZZipPath_.find(sTargetPath) == 0) {
-// 				if(!lpfunc(arg, FilterMode, object->sZZipPath_)) {
-// 					break;
-// 				}
-// 			}
-// 		}
-// 	}
-// 	
-// }
+void ZZipFile::EnumItem( const tstring& sZZipFolderPath, const ZZipFileTree::ValueTravEvent& evt, bool Recursive /*= true*/ )
+{
+	ZZipFileTree::PathType path;
+	ZZipFileTree::String2Path(sZZipFolderPath, path);
+	FileObjectsTree_.DoTrav(ZZipFileTree::PathType(), evt, Recursive);
+}
 
 //////////////////////////////////////////////////////////////////////////
 // class ZZipFileTree
 
-bool ZZipFile::ZZipFileTree::String2Path( const tstring& sInput, ZZipFileTree::PathType& path)
+ZZipFile::ZZipFileTree::ZZipFileTree()
 {
+	ZZipTravEvent += std::make_pair(this, &ZZipFileTree::ZZipTrav);
+}
+
+ZZipFile::ZZipFileTree::~ZZipFileTree()
+{
+	ZZipTravEvent -= std::make_pair(this, &ZZipFileTree::ZZipTrav);
+}
+
+bool ZZipFile::ZZipFileTree::String2Path( const tstring& sInput, ZZipFileTree::PathType& path) {
 	path.clear();
 	size_t offset = 0;
 	size_t pos = sInput.find(_T('/'), offset);
@@ -756,8 +688,7 @@ bool ZZipFile::ZZipFileTree::String2Path( const tstring& sInput, ZZipFileTree::P
 	return false;
 }
 
-bool ZZipFile::ZZipFileTree::Path2String( const ZZipFileTree::PathType& path, tstring& sOutput)
-{
+bool ZZipFile::ZZipFileTree::Path2String( const ZZipFileTree::PathType& path, tstring& sOutput) {
 	sOutput.clear();
 	ZZipFileTree::PathType::const_iterator cit = path.begin();
 	for(; cit != path.end(); cit++) {
@@ -767,31 +698,24 @@ bool ZZipFile::ZZipFileTree::Path2String( const ZZipFileTree::PathType& path, ts
 	return true;
 }
 
-ZZipFile::ZZipFileTree::ZZipFileTree()
+bool ZZipFile::ZZipFileTree::ZZipTrav(NodePtr node)
 {
-
+ 	if(_IsLeaf(node) || ( !_IsLeaf(node) && (NULL==_Left(node)))) {
+ 		// 如果没有子节点的目录，需要保存 
+ 		const ValueType& v = _Value(node);
+ 		tstring sPath;
+ 		//Path2String(_Path(node), sPath);
+ 		//_tprintf(_T("file: %s\n\r"), sPath.c_str());
+ 		ZZipValueTravEvent( _Path(node), v);
+ 	}
+ 
+ 	return true;
 }
 
-ZZipFile::ZZipFileTree::~ZZipFileTree()
+void ZZipFile::ZZipFileTree::DoTrav( const PathType& path, const ValueTravEvent& evt, bool Recursive /*=true*/)
 {
-
-}
-
-bool ZZipFile::ZZipFileTree::TravFunc(NodePtr node, void *arg )
-{
-	//_tprintf(_T("file: %s\n\r"), v.first.c_str());
-	ZZipFile* _this = static_cast<ZZipFile*>(arg);
-	if(_this) {
-		if(_IsLeaf(node) || ( !_IsLeaf(node) && (NULL==_Left(node)))) {
-			// 如果没有子节点的目录，需要保存 
-			const ValueType& v = _Value(node);
-			tstring sPath;
-			Path2String(_Path(node), sPath);
-			
-			_tprintf(_T("file: %s\n\r"), sPath.c_str());
-			_this->WriteFileObject( _Path(node), v.second);
-		}
-	}
-
-	return true;
+	ValueTravEvent old = ZZipValueTravEvent;
+	ZZipValueTravEvent = evt;
+	_MyBase::NodeTrav(path, ZZipTravEvent, Recursive);
+	ZZipValueTravEvent = old;
 }
