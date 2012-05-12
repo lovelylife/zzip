@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../third_party;../base;../apps/ZZip;./"
+				AdditionalIncludeDirectories="../../third_party;../base;./"
 				PreprocessorDefinitions="_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -182,7 +182,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\apps\ZZip\ZZipFile.cc"
+				RelativePath=".\ZZipFile.cc"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -194,7 +194,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\apps\ZZip\ZZipFileObject.cc"
+				RelativePath=".\ZZipFileObject.cc"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
