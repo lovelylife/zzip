@@ -170,7 +170,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\base\ref_counted.cc"
+				RelativePath="..\base\RefCounted.cc"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"

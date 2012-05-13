@@ -1,14 +1,13 @@
 
 #include "stdafx.h"
-#include "typedefs.h"
-#include "ref_counted.h"
+#include "ZZipFile.h"
+
 #include <iostream>
 #include <fstream>
 #include <algorithm>
 #include <stdlib.h>
 #include <io.h>
 #include <strstream>
-#include "ZZipFile.h"
 
 #ifdef _WIN32
 #include <atlbase.h>
@@ -19,31 +18,6 @@
 
 static const TCHAR ZZipTmpFileName[]	= _T(".__zzip__");
 static const TCHAR ZZipTmpFolderName[]  = _T(".cache\\");
-
-// int str2wstr(const std::string& sInput, std::wstring& sOutput) {
-// 	size_t len = sInput.size()+1;
-// 	size_t converted = 0;
-// 	wchar_t *WStr;
-// 	WStr=(wchar_t*)malloc(len*sizeof(wchar_t));
-// 	errno_t err = mbstowcs_s(&converted, WStr, len, sInput.c_str(), _TRUNCATE);
-// 	sOutput.clear();
-// 	sOutput.append(WStr);
-// 	free(WStr);
-// 	return err;
-// }
-
-// int wstr2str(const std::wstring& sInput, std::string& sOutput) {
-// 
-// 	size_t len = sInput.size()+1;
-// 	size_t converted = 0;
-// 	char *CStr;
-// 	CStr=(char*)malloc(len*sizeof(char));
-// 	errno_t err = wcstombs_s(&converted, CStr, len, sInput.c_str(), _TRUNCATE);
-// 	sOutput.clear();
-// 	sOutput.append(CStr);
-// 	free(CStr);ERANGE
-// 	return err;
-// }
 
 bool ZZipFile::PathIsInValid(const tstring& sPath ) {
 	return (_taccess(sPath.c_str(), 0) == -1);

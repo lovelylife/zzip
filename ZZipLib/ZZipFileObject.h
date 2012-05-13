@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "ref_counted.h"
+#include "RefCounted.h"
 #include "ZZip.h"
 
 class _EXT_CLASS ZZipFileObject : public base::RefCountedThreadSafe<ZZipFileObject> {
