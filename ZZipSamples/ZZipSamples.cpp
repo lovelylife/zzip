@@ -17,6 +17,7 @@ public:
 	}
 };
 
+
 int _tmain(int argc, _TCHAR* argv[]) {
 
 // #ifdef USING_TestCode
@@ -64,11 +65,13 @@ int _tmain(int argc, _TCHAR* argv[]) {
 	if(zzip.Open(argv[1])) {
 
 		// 枚举文件
-		EnumItems e;
-		ZZipFile::ZZipFileTree::ValueTravEvent evt;
-		evt += std::make_pair(&e, &EnumItems::EnumFile);
-		zzip.EnumItem(_T("/"), evt, false);
-		evt -= std::make_pair(&e, &EnumItems::EnumFile);
+// 		EnumItems e;
+// 		ZZipFile::ZZipFileTree::ValueTravEvent evt;
+// 		evt += std::make_pair(&e, &EnumItems::EnumFile);
+// 		zzip.EnumItem(_T("/"), evt, false);
+// 		evt -= std::make_pair(&e, &EnumItems::EnumFile);
+
+		Enumerate<EnumItems>(zzip, _T("/"), true);
 
 		// 读取文件"/4.gif" 保存到 "C:\\tt.gif"
 		RefPtr<ZZipFileObject> p = zzip.FindFile(_T("/4.gif"));
