@@ -621,7 +621,7 @@ void ZZipFile::EnumItem( const tstring& sZZipFolderPath, const ZZipFileTree::Val
 {
 	ZZipFileTree::PathType path;
 	ZZipFileTree::String2Path(sZZipFolderPath, path);
-	FileObjectsTree_.DoTrav(ZZipFileTree::PathType(), evt, Recursive);
+	FileObjectsTree_.DoTrav(path, evt, Recursive);
 }
 
 //////////////////////////////////////////////////////////////////////////
