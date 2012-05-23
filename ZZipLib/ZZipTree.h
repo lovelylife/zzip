@@ -344,7 +344,7 @@ public:
 
 	void NodeTrav(const PathType& path, NodeTravEvent evt, bool Recursive = true) {
 		NodePtr _Where = _MyBase::Where(path);
-		_NodeTrav(_Where, evt, Recursive);
+		_NodeTrav(_Left(_Where), evt, Recursive);
 	}
 
 private:

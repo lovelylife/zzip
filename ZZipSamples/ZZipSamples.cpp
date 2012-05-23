@@ -9,6 +9,14 @@
 // 枚举文件
 class EnumItems {
 public:
+	EnumItems(ZZipFile& zzip, const tstring& sPath, bool bRescuire = false) {
+		ZZipFile::ZZipFileTree::ValueTravEvent evt;
+		evt += std::make_pair(this, &EnumItems::EnumFile);
+		zzip.EnumItem(sPath, evt, bRescuire);
+		evt -= std::make_pair(this, &EnumItems::EnumFile);
+	}
+
+public:
 	bool EnumFile(const ZZipFile::ZZipFileTree::PathType& path, const ZZipFile::ZZipFileTree::ValueType&) {
 		tstring sPath;
 		ZZipFile::ZZipFileTree::Path2String(path, sPath);
@@ -64,16 +72,17 @@ int _tmain(int argc, _TCHAR* argv[]) {
 		zzip.Close();
 	}
 
-	if(zzip.Open(sZZipFileName)) {
+	ZZipFile zzip2;
+	if(zzip2.Open(sZZipFileName)) {
 
 		// 枚举文件
-// 		EnumItems e;
+		EnumItems e(zzip2, _T("/drawables"), true);
 // 		ZZipFile::ZZipFileTree::ValueTravEvent evt;
 // 		evt += std::make_pair(&e, &EnumItems::EnumFile);
 // 		zzip.EnumItem(_T("/"), evt, false);
 // 		evt -= std::make_pair(&e, &EnumItems::EnumFile);
 
-		ZZipEnum<EnumItems>(zzip, _T("/"), true);
+//		ZZipEnum<EnumItems>(zzip2, _T("/drawables"), false);
 // 
 // 		// 读取文件"/4.gif" 保存到 "C:\\tt.gif"
 // 		RefPtr<ZZipFileObject> p = zzip.FindFile(_T("/4.gif"));
@@ -98,7 +107,7 @@ int _tmain(int argc, _TCHAR* argv[]) {
 // 			}
 // 		}
 		
-		zzip.Close();
+		zzip2.Close();
 	}
 	return 0;
 }
