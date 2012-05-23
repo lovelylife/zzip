@@ -653,7 +653,8 @@ bool ZZipFile::ZZipFileTree::String2Path( const tstring& sInput, ZZipFileTree::P
 		offset = pos+1;
 		pos = sInput.find('/', offset);
 	}
-	if(pos != sInput.size()) {
+
+	if(offset < (sInput.size())) {
 		path.push_back(sInput.substr(offset,sInput.size()-offset));
 	}
 	return false;

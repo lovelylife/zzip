@@ -234,13 +234,13 @@ private:
 };
 
 // 用于枚举文件
-template<class _Traits>
-void ZZipEnum(ZZipFile& zzipfile, const tstring& sZZipPath, bool bRescuire = false) {
-	_Traits e;
-	ZZipFile::ZZipFileTree::ValueTravEvent evt;
-	evt += std::make_pair(&e, &_Traits::EnumFile);
-	zzipfile.EnumItem(sZZipPath, evt, bRescuire);
-	evt -= std::make_pair(&e, &_Traits::EnumFile);
-}
+// template<class _Traits>
+// void ZZipEnum(ZZipFile& zzipfile, const tstring& sZZipPath, bool bRescuire = false) {
+// 	_Traits e;
+// 	ZZipFile::ZZipFileTree::ValueTravEvent evt;
+// 	evt += std::make_pair(&e, &_Traits::EnumFile);
+// 	zzipfile.EnumItem(sZZipPath, evt, bRescuire);
+// 	evt -= std::make_pair(&e, &_Traits::EnumFile);
+// }
 
 #endif
