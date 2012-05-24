@@ -57,7 +57,7 @@ bool ZZipFile::Open(HINSTANCE hInstance, const tstring& sType, unsigned int pszR
 	Type_ = TypeStream;
 
 	//定位我们的自定义资源，这里因为我们是从本模块定位资源，所以将句柄简单地置为NULL即可
-	HRSRC hRsrc = FindResource(hInstance, MAKEINTRESOURCE(pszResourceName), sType.c_str());
+	HRSRC hRsrc = ::FindResource(hInstance, MAKEINTRESOURCE(pszResourceName), sType.c_str());
 	if (NULL == hRsrc) return false;
 
 	//获取资源的大小
@@ -508,8 +508,8 @@ void ZZipFile::Clear()
 
 bool ZZipFile::ExtractFile( const tstring& sZZipPath,IStream** pStream ) {
 	// 查找文件
-	const ZZipFileObject* p = FindFile(sZZipPath);
-	if(p && (p->filesize() > 0)) {
+	RefPtr<ZZipFileObject> p = FindFile(sZZipPath);
+	if((NULL!=p) && (p->filesize() > 0)) {
 		HGLOBAL hGlobal = GlobalAlloc(GMEM_MOVEABLE, p->filesize());
 		void* pData = GlobalLock(hGlobal);
 		StreamPtr_->seekg(p->offset(), std::ios::beg);
