@@ -95,15 +95,22 @@ public:
 
 	NodePtr Where(PathType path, bool isleaf = false) {
 		// 查找path所在节点
-		NodePtr node = _Left(_Root());
-		if(NULL == node) return node;
-		//PathType::const_iterator cit = path.begin();
-		bool bfound = false;
-		if(path.size() < 1) {
+		NodePtr node = _Root();
+		// 清楚空节点
+		PathType::iterator it = path.begin();
+		for(; it != path.end(); it++) {
+			if(*it == KeyType()) {
+				path.erase(it);
+			}
+		}
+		
+		if(path.empty()) {
 			if(isleaf) return NULL;
 			else return node;
 		}
 
+		bool bfound = false;
+		node = _Left(node);
 		while(node) {
  			if((*path.begin()) == _Key(node)) {
 				if(_IsLeaf(node)) { // 叶节点					

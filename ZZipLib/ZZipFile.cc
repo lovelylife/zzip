@@ -521,6 +521,30 @@ bool ZZipFile::ExtractFile( const tstring& sZZipPath,IStream** pStream ) {
 	return false;
 }
 
+bool ZZipFile::ExtractFile( const tstring& sZZipPath, std::stringstream& sstream ) {
+	// ¶ÁÈ¡ÎÄ¼þsZZipPath
+	RefPtr<ZZipFileObject> p = FindFile(sZZipPath);
+	if(NULL != p) {
+		char buffer[1024] = {0};
+		int64 filesize = p->filesize();
+		int64 startpos = 0;
+		int64 fcount = filesize;
+		while(fcount > 0) {
+			int64 ReadBytes = ReadData(p, startpos, (void*)buffer, 1024);
+			if(ReadBytes > 0) {
+				fcount -= ReadBytes;
+				startpos += ReadBytes;
+				sstream.write(buffer, ReadBytes);
+			} else {
+				break;
+			}
+		}
+		return true;
+	}
+
+	return false;
+}
+
 bool ZZipFile::RemoveDir( const tstring& sLocalDir )
 {
 	SHFILEOPSTRUCT sop = {0}; 
