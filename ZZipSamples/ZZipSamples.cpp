@@ -76,7 +76,7 @@ int _tmain(int argc, _TCHAR* argv[]) {
 	if(zzip2.Open(sZZipFileName)) {
 
 		// ц╤╬ынд╪Ч
-		EnumItems e(zzip2, _T("/drawables"), true);
+		EnumItems e(zzip2, _T("/"), true);
 // 		ZZipFile::ZZipFileTree::ValueTravEvent evt;
 // 		evt += std::make_pair(&e, &EnumItems::EnumFile);
 // 		zzip.EnumItem(_T("/"), evt, false);

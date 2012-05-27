@@ -161,7 +161,10 @@ public:
   int64 ReadData(const ZZipFileObject* zzipfile, int64 offset, void* lpBuffer, int64 size);
 
   // 读取文件到内存
-  bool ExtractFile(const tstring& sZZipPath,IStream** pStream);
+  bool ExtractFile(const tstring& sZZipPath, IStream** pStream);
+
+  // 读取到streamstream
+  bool ExtractFile(const tstring& sZZipPath, std::stringstream& sstream);
 
   // 保存ZZip文件
   ZZIP_Writer bool Save();
