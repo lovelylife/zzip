@@ -25,9 +25,24 @@ public:
 	}
 };
 
+struct tests {
+	bool a1 : 1;
+	bool a2 : 1;
+	bool a3 : 1;
+	bool a4 : 1;
+	bool a5 : 1;
+	bool a6 : 1;
+	bool a7 : 1;
+	bool a8 : 1;
+};
 
 int _tmain(int argc, _TCHAR* argv[]) {
 
+	struct tests ttt = {0};
+	ttt.a7 = true;
+	printf("size: %d, value=%d\n", sizeof(ttt), ttt);
+
+	return 0;
 // #ifdef USING_TestCode
 // 	QUI::Color::doTest();
 // #endif

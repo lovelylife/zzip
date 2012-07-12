@@ -22,10 +22,10 @@ namespace base {
 			RefCountedBase();
 			~RefCountedBase();
 
-			void AddRef() const;
+			void add_ref() const;
 
 			// Returns true if the object should self-delete.
-			bool Release() const;
+			bool release() const;
 
 		private:
 			mutable int ref_count_;
@@ -48,10 +48,10 @@ namespace base {
 			RefCountedThreadSafeBase();
 			~RefCountedThreadSafeBase();
 
-			void AddRef() const;
+			void add_ref() const;
 
 			// Returns true if the object should self-delete.
-			bool Release() const;
+			bool release() const;
 
 		private:
 			mutable AtomicRefCount ref_count_;
@@ -84,12 +84,12 @@ namespace base {
 		RefCounted() { }
 		~RefCounted() { }
 
-		void AddRef() const {
-			subtle::RefCountedBase::AddRef();
+		void add_ref() const {
+			subtle::RefCountedBase::add_ref();
 		}
 
-		void Release() const {
-			if (subtle::RefCountedBase::Release()) {
+		void release() const {
+			if (subtle::RefCountedBase::release()) {
 				delete static_cast<const T*>(this);
 			}
 		}
@@ -132,12 +132,12 @@ namespace base {
 		RefCountedThreadSafe() { }
 		~RefCountedThreadSafe() { }
 
-		void AddRef() const {
-			subtle::RefCountedThreadSafeBase::AddRef();
+		void add_ref() const {
+			subtle::RefCountedThreadSafeBase::add_ref();
 		}
 
-		void Release() const {
-			if (subtle::RefCountedThreadSafeBase::Release()) {
+		void release() const {
+			if (subtle::RefCountedThreadSafeBase::release()) {
 				Traits::Destruct(static_cast<const T*>(this));
 			}
 		}
@@ -220,23 +220,23 @@ public:
 
 	RefPtr(T* p) : ptr_(p) {
 		if (ptr_)
-			ptr_->AddRef();
+			ptr_->add_ref();
 	}
 
 	RefPtr(const RefPtr<T>& r) : ptr_(r.ptr_) {
 		if (ptr_)
-			ptr_->AddRef();
+			ptr_->add_ref();
 	}
 
 	template <typename U>
 	RefPtr(const RefPtr<U>& r) : ptr_(r.get()) {
 		if (ptr_)
-			ptr_->AddRef();
+			ptr_->add_ref();
 	}
 
 	~RefPtr() {
 		if (ptr_)
-			ptr_->Release();
+			ptr_->release();
 	}
 
 	T* get() const { return ptr_; }
@@ -257,9 +257,9 @@ public:
 	RefPtr<T>& operator=(T* p) {
 		// AddRef first so that self assignment should work
 		if (p)
-			p->AddRef();
+			p->add_ref();
 		if (ptr_ )
-			ptr_ ->Release();
+			ptr_ ->release();
 		ptr_ = p;
 		return *this;
 	}
