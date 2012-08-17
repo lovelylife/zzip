@@ -269,18 +269,6 @@
 				Name="ZZip"
 				>
 				<File
-					RelativePath=".\apps\ZZip\ZZipApp.cc"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							UsePrecompiledHeader="2"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath=".\apps\ZZip\ZZipCommand.cc"
 					>
 					<FileConfiguration
