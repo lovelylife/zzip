@@ -9,10 +9,10 @@ class IDownloadObject;
 
 //////////////////////////////////////////////////////////////////////////
 // class Downloaders
-// ÎÄ¼şÏÂÔØ¹ÜÀíÆ÷
+// æ–‡ä»¶ä¸‹è½½ç®¡ç†å™¨
 //////////////////////////////////////////////////////////////////////////
 class Downloaders : public IDownloaders {
-// IDownloaders ½Ó¿Ú
+// IDownloaders æ¥å£
 public:
 	void initialize() {}
 	long create_task(const char* sUrl, IDownloadeHandler* controller = NULL, const char* sSavePath = NULL) {

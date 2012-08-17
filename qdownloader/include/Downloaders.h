@@ -8,10 +8,10 @@ class IDownloadeHandler;
 
 class IDownloaders {
 public:
-	// ³õÊ¼»¯
+	// åˆå§‹åŒ–
 	virtual void initialize() = 0;
 
-	// Ìí¼ÓÈÎÎñ£¬·µ»ØÖµÎª0±íÊ¾³É¹¦£¬·ñÔòÎª´íÎóºÅ
+	// æ·»åŠ ä»»åŠ¡ï¼Œè¿”å›å€¼ä¸º0è¡¨ç¤ºæˆåŠŸï¼Œå¦åˆ™ä¸ºé”™è¯¯å·
 	virtual long create_task(const char* sUrl, IDownloadeHandler* control, const char* sSavePath) = 0;
 };
 
