@@ -6,11 +6,11 @@ namespace q {
 
 struct IDownloadeHandler 
 {
-	// װ��
+	// 装载
 	virtual void onattach(IDownloadObject*) = 0;
-	// ж��
+	// 卸载
 	virtual void ondettach() = 0;
-	// ״̬�仯
+	// 状态变化
 	virtual void onstatuschanged(int) = 0;
 };
 
