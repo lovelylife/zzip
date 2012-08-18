@@ -2,20 +2,18 @@
 #ifndef Downloaders_h__
 #define Downloaders_h__
 
+#include "Object.h"
+#include "DownloadController.h"
+
 namespace q {
 
-class IDownloadeHandler;
-
-class IDownloaders {
+class IDownloaders : public Object {
 public:
-	// 初始化
 	virtual void initialize() = 0;
-
-	// 添加任务，返回值为0表示成功，否则为错误号
-	virtual long create_task(const char* sUrl, IDownloadeHandler* control, const char* sSavePath) = 0;
+	virtual long create_task(const char* sUrl, const char* sSavePath, IDownloadController* control) = 0;
 };
 
-static IDownloaders* CreateDownloaders();
+static IDownloaders* create_downloaders();
 
 } // namespace q
 

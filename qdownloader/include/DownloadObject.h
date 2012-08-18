@@ -2,14 +2,19 @@
 #ifndef DownloadObject_h__
 #define DownloadObject_h__
 
+#include "TypeDefs.h"
+#include "Object.h"
 
 namespace q {
 
-class IDownloadObject {
-public:
-	IDownloadObject(void);
-	~IDownloadObject(void);
+struct IDownloadObject : Object {
+	virtual uint64 get_downloaded() = 0;
+	virtual uint64 get_size() = 0;
+	virtual const char* get_actual_url() = 0;
+	virtual const char* get_url() = 0;
 };
+
+IDownloadObject* downloadobject_createinstance(const char* sUrl, const char* sSavePath);
 
 } // namespace q
 

@@ -1,16 +1,15 @@
 
-#ifndef DownloadeHandler_h__
-#define DownloadeHandler_h__
+#ifndef DownloadController_h__
+#define DownloadController_h__
+
+#include "Object.h"
+#include "DownloadObject.h"
 
 namespace q {
 
-struct IDownloadeHandler 
-{
-	// 装载
+struct IDownloadController : Object {
 	virtual void onattach(IDownloadObject*) = 0;
-	// 卸载
 	virtual void ondettach() = 0;
-	// 状态变化
 	virtual void onstatuschanged(int) = 0;
 };
 
