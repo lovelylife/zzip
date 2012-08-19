@@ -23,7 +23,9 @@ public:
 			}
 		}
 		return 0;
-	}
+	} 
+
+
 
 public:
 	Downloaders(void) {};
@@ -31,6 +33,7 @@ public:
 
 private:
 	std::list< RefPtr<IDownloadObject> > queue_;
+	Tr
 };
 
 

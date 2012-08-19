@@ -42,7 +42,7 @@ int _tmain(int argc, _TCHAR* argv[]) {
 	ttt.a7 = true;
 	printf("size: %d, value=%d\n", sizeof(ttt), ttt);
 
-	return 0;
+	//return 0;
 // #ifdef USING_TestCode
 // 	QUI::Color::doTest();
 // #endif
