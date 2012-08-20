@@ -1,7 +1,7 @@
 
 
-#ifndef _SYNC_H
-#define _SYNC_H
+#ifndef Semaphore_h__
+#define Semaphore_h__
 
 #ifdef WIN32
 	#include <windows.h>
@@ -19,8 +19,8 @@ public:
 
 // ²Ù×÷
 public:
-	void down();
-	void up();
+	void wait();
+	void release();
 
 private:
 	sem_t sem;
@@ -65,4 +65,4 @@ inline void Semaphore::up() {
 
 #endif		// WIN32
 
-#endif
+#endif // Semaphore_h__

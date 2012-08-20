@@ -8,9 +8,9 @@
 namespace q {
 
 struct IDownloadController : Object {
-	virtual void onattach(IDownloadObject*) = 0;
-	virtual void ondettach() = 0;
-	virtual void onstatuschanged(int) = 0;
+	virtual void OnAttach(IDownloadObject*) = 0;
+	virtual void OnDettach() = 0;
+	virtual void OnStatusChanged(int) = 0;
 };
 
 } // namespace q

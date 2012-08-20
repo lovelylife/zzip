@@ -4,7 +4,7 @@
 #ifndef __THREADS_H__
 #define __THREADS_H__
 #include "../base/builder_config.h"
-
+#include "typedefs.h"
 #ifndef OS_WIN
 	#include <pthread.h>
 	#include <time.h>
@@ -12,31 +12,40 @@
 	#define WIN32_LEAN_AND_MEAN
 	#include <windows.h>
 	#include <process.h>
-#include "typedefs.h"
 #endif
 
 namespace base {
 
+
+template<class TFunc, class result_type>
+struct function {
+	result_type operator()() {
+		return TFunc();
+	}
+};
+
+
 class Thread {
 public:
-
-	// 标准构造和析构函数
-	Thread();
-	~Thread();
-
 	//! 启动线程
-	virtual bool start();
+	virtual bool start(function<>&);
 
 	//! 停止线程
 	virtual bool stop();
 		
 	// 判断线程是否在运行
-	bool IsRunning() const { return bRunning_;}
+	bool running() const { return bRunning_;}
 		
 	// 等待线程停止
-	bool WaitThreadEnd(unsigned long timeout = -1);
+	bool timedwait_stop(unsigned long timeout = -1);
 
-	// 线程句柄
+// 标准构造和析构函数
+public:
+	Thread();
+	~Thread();
+
+public:
+// 线程句柄
 #ifdef OS_WIN
 	typedef HANDLE pthread_t;
 	DWORD dwThreadId;
@@ -44,24 +53,17 @@ public:
 	pthread_t hThread;
 
 protected:
-
-	// 线程循环，在线程空间内执行,需要由子类实现
-	// return
-	// true 线程将继续循环调用ThreadLoop(),
-	// false 线程将停止
-	virtual bool ThreadLoop() = 0;
-		
 	//! 等待线程停止
-	//	调用后将设置为等待停止状态,并阻塞调用线程,直到CBaseThread线程停止
-	virtual bool WaitForStop(unsigned long timeout = -1); 
+	//	调用后将设置为等待停止状态,并阻塞调用线程,直到线程停止
+	virtual bool begin_waitstop(unsigned long timeout = -1); 
 		
 	// 线程开始时被调用
 	// 在线程空间内执行,线程开始时被调用
-	virtual void OnBegin(){}
+	virtual void begin(){}
 
 	// 线程停止时被调用
 	// 在线程空间内执行,线程停止时被调用
-	virtual void OnExit(){}
+	virtual void end(){}
 
 	// 等待停止
 	volatile bool bWaitStop_;
@@ -76,10 +78,13 @@ protected:
 	static void* ThreadFunc( void* pArguments );
 #endif
 
+	function func;
+
 private:
 	DISALLOW_COPY_AND_ASSIGN(Thread);
+
 }; // class Thread
 
-} // namespace end
+} // namespace base
 
 #endif

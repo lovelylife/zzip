@@ -18,7 +18,7 @@ Thread::Thread()
 
 Thread::~Thread(){}
 
-bool Thread::start(){
+bool Thread::start(function&){
 	if(!bRunning_) {
 #ifdef OS_WIN
 		hThread = (HANDLE)_beginthreadex( 0, 0, &ThreadFunc, this, 0, (unsigned*)&dwThreadId );
@@ -33,7 +33,7 @@ bool Thread::start(){
 	return bRunning_;
 }
 
-bool Thread::WaitForStop(unsigned long timeout) {
+bool Thread::begin_waitstop(unsigned long timeout) {
 	if(bRunning_) {
 		bWaitStop_ = true;
 #ifdef OS_WIN
@@ -45,12 +45,12 @@ bool Thread::WaitForStop(unsigned long timeout) {
 	return true;
 }
 
-bool Thread::WaitThreadEnd(unsigned long timeout) {
+bool Thread::timedwait_stop(unsigned long timeout) {
 	if(bRunning_) {
 #ifdef OS_WIN
 		return (WaitForSingleObject(hThread,timeout) == WAIT_OBJECT_0);
 #else
-		pthread_join(hThread, 0);
+		pthread_join(hThread, NULL);
 #endif
 	}
 	return true;
@@ -82,7 +82,7 @@ void* Thread::ThreadFunc( void* pArguments )
 	unsigned exitCode = 0;
 	this_->OnBegin();
 	while(!this_->bWaitStop_){
-		if(!this_->ThreadLoop()){
+		if(!func()){
 			exitCode = 0;
 			break;
 		}

@@ -5,6 +5,7 @@
 #include <iostream>
 //#include "Color.h"
 #include <atlconv.h>
+#include <boost/boost.h>
 
 // ц╤╬ынд╪Ч
 class EnumItems {
@@ -34,6 +35,15 @@ struct tests {
 	bool a6 : 1;
 	bool a7 : 1;
 	bool a8 : 1;
+};
+
+class WorkThread 
+	: public base::Thread 
+{
+public:
+	bool ThreadLoop() {
+		return true;
+	}
 };
 
 int _tmain(int argc, _TCHAR* argv[]) {
