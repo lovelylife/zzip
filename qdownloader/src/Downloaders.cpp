@@ -19,13 +19,12 @@ public:
 		RefPtr<IDownloadObject> downobject = downloadobject_createinstance(sUrl, sSavePath);
 		if(NULL != downobject) {
 			if(NULL != controller) {
-				controller->onattach(downobject);
+				controller->OnAttach(downobject);
 			}
 		}
+		
 		return 0;
-	} 
-
-
+	}
 
 public:
 	Downloaders(void) {};
@@ -33,7 +32,7 @@ public:
 
 private:
 	std::list< RefPtr<IDownloadObject> > queue_;
-	Tr
+	
 };
 
 

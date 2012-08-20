@@ -5,6 +5,7 @@
 #include <iostream>
 #include "base/application.h"
 #include <fstream>
+#include "thread.h"
 
 using namespace std;
 
@@ -12,15 +13,24 @@ using namespace std;
 
 #ifdef UsingApp_ZZip
 	#include "apps/ZZip/ZZipApp.h"
+
 	typedef ZZipApp CAppClass;
 #endif
 
 CAppClass theApp;
 
+class WorkThread 
+	: public Thread 
+{
+	
+};
+
 int _tmain(int argc, TCHAR* argv[])
 {
 	theApp.run(argc, argv);
 	theApp.stop();
+
+
 
 #ifdef USING_DEBUG
 	system("pause");

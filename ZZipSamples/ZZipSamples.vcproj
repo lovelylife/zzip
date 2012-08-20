@@ -197,6 +197,18 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\base\Thread.cc"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath=".\ZZipSamples.cpp"
 				>
 			</File>
