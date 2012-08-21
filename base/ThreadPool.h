@@ -19,7 +19,7 @@ namespace q {
 
 struct ITask : Object {
 	virtual bool work() = 0;
-	virtual bool onfinish() = 0;
+	virtual void onfinish() = 0;
 };
 
 class ThreadPool;
@@ -60,7 +60,8 @@ private:
 
 class ThreadPoolManager {
 public:
-	bool run();
+	bool run(int thread_num);
+	void stop();
 	bool newtask(ITask* task, int time = -1, int times = 0);
 
 public:
