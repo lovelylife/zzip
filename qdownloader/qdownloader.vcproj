@@ -18,8 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(PROJECTS)/out/bin/$(PlatformName)/$(ConfigurationName)"
+			IntermediateDirectory="$(PROJECTS)/out/temp/$(PlatformName)/$(ProjectName)_$(ConfigurationName)/$(ConfigurationName)"
 			ConfigurationType="4"
 			CharacterSet="1"
 			>
@@ -155,6 +155,14 @@
 			</File>
 			<File
 				RelativePath=".\src\DownloadObject.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\base\Thread.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\base\ThreadPool.cc"
 				>
 			</File>
 		</Filter>

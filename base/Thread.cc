@@ -20,7 +20,7 @@ Thread::Thread()
 
 Thread::~Thread(){}
 
-bool Thread::start(function&){
+bool Thread::start(){
 	if(!bRunning_) {
 #ifdef OS_WIN
 		thread_ = (HANDLE)_beginthreadex( 0, 0, &ThreadFunc, this, 0, (unsigned*)&thread_id_ );
@@ -60,11 +60,10 @@ bool Thread::timedwait_stop(unsigned long timeout) {
 
 bool Thread::stop() {
 	if(bRunning_) {
-		WaitForStop();
+		timedwait_stop();
 #ifdef OS_WIN
 		CloseHandle(thread_);
 #endif
-
 		thread_ = 0;
 		bRunning_ = false;
 	}

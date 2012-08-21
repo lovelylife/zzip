@@ -5,7 +5,7 @@
 #include <iostream>
 //#include "Color.h"
 #include <atlconv.h>
-#include <boost/boost.h>
+#include "Downloaders.h"
 
 // ц╤╬ынд╪Ч
 class EnumItems {
@@ -37,22 +37,13 @@ struct tests {
 	bool a8 : 1;
 };
 
-class WorkThread 
-	: public base::Thread 
-{
-public:
-	bool ThreadLoop() {
-		return true;
-	}
-};
 
 int _tmain(int argc, _TCHAR* argv[]) {
 
-	struct tests ttt = {0};
-	ttt.a7 = true;
-	printf("size: %d, value=%d\n", sizeof(ttt), ttt);
+	q::IDownloaders* downloaders = q::create_downloaders();
+	downloaders->initialize();
 
-	//return 0;
+	return 0;
 // #ifdef USING_TestCode
 // 	QUI::Color::doTest();
 // #endif
