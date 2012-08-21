@@ -4,13 +4,16 @@
 // 线程基本操作的封装
 //////////////////////////////////////////////////////////////////////////
 
-#ifndef __THREADS_H__
-#define __THREADS_H__
+#ifndef ThreadPool_h__
+#define ThreadPool_h__
 
 #include "../base/builder_config.h"
-#include "typedefs.h"
-
-
+#include "TypeDefs.h"
+#include "Object.h"
+#include "Thread.h"
+#include <vector>
+#include "RefCounted.h"
+#include "SemaphoreQueue.h"
 
 namespace q {
 
@@ -22,7 +25,7 @@ struct ITask : Object {
 class ThreadPool;
 
 class WorkThread 
-	: public base::Thread 
+	: public Thread 
 {
 public:
 	WorkThread(ThreadPool* pool);
@@ -38,7 +41,7 @@ private:
 class ThreadPool {
 public:
 	bool run();
-	bool stop();
+	void stop();
 	bool newtask(ITask* task, int time = -1, int times = 0);
 
 public:

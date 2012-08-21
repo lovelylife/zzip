@@ -4,11 +4,11 @@
 // 线程基本操作的封装
 //////////////////////////////////////////////////////////////////////////
 
-#ifndef __THREADS_H__
-#define __THREADS_H__
+#ifndef Thread_h__
+#define Thread_h__
 
 #include "../base/builder_config.h"
-#include "typedefs.h"
+#include "TypeDefs.h"
 
 # ifndef OS_WIN
 #	include <pthread.h>
@@ -19,7 +19,7 @@
 #	include <process.h>
 # endif
 
-namespace base {
+namespace q {
 
 class Thread {
 // 共用方法

@@ -8,7 +8,7 @@
 #include <process.h>
 #endif
 
-namespace base {
+namespace q {
 
 Thread::Thread() 
 : thread_(0)
@@ -83,7 +83,7 @@ void* Thread::ThreadFunc( void* pArguments )
 	unsigned exitCode = 0;
 	this_->OnBegin();
 	while(!this_->bWaitStop_){
-		if(!func()){
+		if(!this_->loop()){
 			exitCode = 0;
 			break;
 		}
@@ -111,4 +111,4 @@ bool Thread::is_running() const
 {
 	return bRunning_;
 }
-} // namespace end
+} // namespace q
