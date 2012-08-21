@@ -2,24 +2,9 @@
 #ifndef Downloaders_h__
 #define Downloaders_h__
 
-#include "Object.h"
-#include "Thread.h"
 #include "DownloadController.h"
-#include <vector>
-#include <list>
-#include "RefCounted.h"
-#include "SemaphoreQueue.h"
 
 namespace q {
-
-class Task {
-
-};
-
-class Reactor {
-
-	std::list<Task> list;
-};
 
 class IDownloaders : public Object {
 public:
