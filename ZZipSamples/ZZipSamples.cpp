@@ -7,6 +7,7 @@
 #include <atlconv.h>
 #include "Downloaders.h"
 
+
 // ц╤╬ынд╪Ч
 class EnumItems {
 public:
@@ -37,11 +38,30 @@ struct tests {
 	bool a8 : 1;
 };
 
+class DownloadController : public q::IDownloadController {
+public:
+	void OnAttach(q::IDownloadObject*) {
+		printf("DownloadController attached.");
+	}
+
+	void OnDettach() {
+		printf("DownloadController deattached.");
+	}
+
+	void OnStatusChanged(int) {
+		printf("DownloadController OnStatusChanged.");
+	}
+};
+
 
 int _tmain(int argc, _TCHAR* argv[]) {
 
 	q::IDownloaders* downloaders = q::create_downloaders();
-	downloaders->initialize();
+	downloaders->initialize(3);
+
+	if(0 != downloaders->create_task("http://baidu.com/index.html", "C:\\a.html", new DownloadController)) {
+		printf("error create download task.");
+	}
 
 	return 0;
 // #ifdef USING_TestCode

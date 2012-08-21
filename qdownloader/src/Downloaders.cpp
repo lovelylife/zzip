@@ -11,11 +11,31 @@ namespace q {
 //////////////////////////////////////////////////////////////////////////
 // class Downloaders
 //////////////////////////////////////////////////////////////////////////
-	
+
+class DownloadTask : public ITask {
+public:
+	DownloadTask() {
+
+	}
+
+	~DownloadTask() {}
+
+	bool work() {
+		
+	}
+
+	void onfinish() {
+
+	}
+};
+
 class Downloaders : public IDownloaders {
 // IDownloaders 接口
 public:
-	void initialize() {}
+	void initialize(int thread_num) {
+		thread_pool_manager_.run(thread_num);
+	}
+
 	long create_task(const char* sUrl, const char* sSavePath = NULL, IDownloadController* controller = NULL) {
 		RefPtr<IDownloadObject> downobject = downloadobject_createinstance(sUrl, sSavePath);
 		if(NULL != downobject) {
@@ -37,7 +57,7 @@ public:
 
 private:
 	std::list< RefPtr<IDownloadObject> > queue_;
-	ThreadPoolManager ThreadPoolManager_;	
+	ThreadPoolManager thread_pool_manager_;	
 };
 
 

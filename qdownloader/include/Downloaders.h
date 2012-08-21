@@ -8,9 +8,9 @@ namespace q {
 
 class IDownloaders : public Object {
 public:
-	virtual void initialize() = 0;
+	virtual void initialize(int thread_num) = 0;
 	virtual long create_task(const char* sUrl, const char* sSavePath, IDownloadController* control) = 0;
-	virtual void remove_task(const char* sUrl);
+	virtual void remove_task(const char* sUrl) = 0;
 };
 
 IDownloaders* create_downloaders();

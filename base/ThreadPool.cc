@@ -81,19 +81,16 @@ bool ThreadPool::work_proc()
 
 ThreadPoolManager::ThreadPoolManager()
 {
-	number_of_thread = 5;
 }
 
-ThreadPoolManager::ThreadPoolManager( int thread_num ) : number_of_thread(thread_num)
+bool ThreadPoolManager::run(int thread_num)
 {
-	if(number_of_thread <= 0) {
-		number_of_thread = 5;
+	if(thread_num <= 0) {
+		thread_num = 5;
 	}
-}
 
-bool ThreadPoolManager::run()
-{
-	thread_pool_ = new ThreadPool(number_of_thread);
+	thread_pool_ = new ThreadPool(thread_num);
+
 	return thread_pool_->run();
 }
 
@@ -102,4 +99,10 @@ bool ThreadPoolManager::newtask( ITask* task, int time /*= -1*/, int times /*= 0
 	//assert(NULL != thread_pool_);
 	return thread_pool_->newtask(task, time, times);
 }
+
+void ThreadPoolManager::stop()
+{
+	thread_pool_->stop();
+}
+
 } // namespace q
