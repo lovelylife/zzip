@@ -42,9 +42,10 @@ bool ThreadPool::run()
 		threads.push_back(p);
 		p->start();
 	}
+	return true;
 }
 
-bool ThreadPool::stop()
+void ThreadPool::stop()
 {
 	for(size_t i=0; i < threads.size(); i++) {
 		WorkThread* p = threads[i];
@@ -93,7 +94,7 @@ ThreadPoolManager::ThreadPoolManager( int thread_num ) : number_of_thread(thread
 bool ThreadPoolManager::run()
 {
 	thread_pool_ = new ThreadPool(number_of_thread);
-	thread_pool_->run();
+	return thread_pool_->run();
 }
 
 bool ThreadPoolManager::newtask( ITask* task, int time /*= -1*/, int times /*= 0*/ )
