@@ -32,7 +32,7 @@ public:
 
 private:
 	std::list< RefPtr<IDownloadObject> > queue_;
-	
+	ThreadPoolManager ThreadPoolManager_;	
 };
 
 
