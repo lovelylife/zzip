@@ -11,21 +11,23 @@
 namespace base {
 
 Thread::Thread() 
-	: hThread(0)
-	, bRunning_(false)
-	, bWaitStop_(false)
-{}
+: thread_(0)
+, bRunning_(false)
+, bWaitStop_(false)
+{
+
+}
 
 Thread::~Thread(){}
 
 bool Thread::start(function&){
 	if(!bRunning_) {
 #ifdef OS_WIN
-		hThread = (HANDLE)_beginthreadex( 0, 0, &ThreadFunc, this, 0, (unsigned*)&dwThreadId );
-		if (hThread == 0) return false;
+		thread_ = (HANDLE)_beginthreadex( 0, 0, &ThreadFunc, this, 0, (unsigned*)&thread_id_ );
+		if (thread_ == 0) return false;
 #else
-		if (0 != pthread_create(&hThread, NULL, &ThreadFunc, this)) {
-			hThread = 0;
+		if (0 != pthread_create(&thread_, NULL, &ThreadFunc, this)) {
+			thread_ = 0;
 			return false;
 		}
 #endif
@@ -37,9 +39,9 @@ bool Thread::begin_waitstop(unsigned long timeout) {
 	if(bRunning_) {
 		bWaitStop_ = true;
 #ifdef OS_WIN
-		return WaitForSingleObject(hThread,timeout) == WAIT_OBJECT_0;
+		return WaitForSingleObject(thread_,timeout) == WAIT_OBJECT_0;
 #else
-		pthread_join(hThread, NULL);
+		pthread_join(thread_, NULL);
 #endif
 	}
 	return true;
@@ -48,9 +50,9 @@ bool Thread::begin_waitstop(unsigned long timeout) {
 bool Thread::timedwait_stop(unsigned long timeout) {
 	if(bRunning_) {
 #ifdef OS_WIN
-		return (WaitForSingleObject(hThread,timeout) == WAIT_OBJECT_0);
+		return (WaitForSingleObject(thread_,timeout) == WAIT_OBJECT_0);
 #else
-		pthread_join(hThread, NULL);
+		pthread_join(thread_, NULL);
 #endif
 	}
 	return true;
@@ -60,10 +62,10 @@ bool Thread::stop() {
 	if(bRunning_) {
 		WaitForStop();
 #ifdef OS_WIN
-		CloseHandle(hThread);
+		CloseHandle(thread_);
 #endif
 
-		hThread = 0;
+		thread_ = 0;
 		bRunning_ = false;
 	}
 	return true;
@@ -87,7 +89,7 @@ void* Thread::ThreadFunc( void* pArguments )
 			break;
 		}
 	}
-	this_->OnExit();
+	this_->OnEnd();
 #ifdef OS_WIN
 	return exitCode;
 #else
@@ -96,4 +98,18 @@ void* Thread::ThreadFunc( void* pArguments )
 
 } 
 
+void Thread::OnBegin()
+{
+
+}
+
+void Thread::OnEnd()
+{
+
+}
+
+bool Thread::is_running() const
+{
+	return bRunning_;
+}
 } // namespace end

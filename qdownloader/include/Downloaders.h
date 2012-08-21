@@ -8,6 +8,7 @@
 #include <vector>
 #include <list>
 #include "RefCounted.h"
+#include "SemaphoreQueue.h"
 
 namespace q {
 
@@ -18,12 +19,31 @@ struct ITask : Object {
 	virtual bool onfinish() = 0;
 };
 
-class WorkThread : public base::Thread {
+class ThreadPool;
+
+class WorkThread 
+	: public base::Thread 
+{
+public:
+	WorkThread(ThreadPool* pool) : pool_(pool) {
+	
+	}
+
+	~WorkThread() {
+	
+	}
+
 protected:
-	bool loop() { return true; }
+	bool loop();
+
+private:
+	ThreadPool* pool_;
 };
 
 class ThreadPool {
+
+friend class WorkThread;
+
 public:
 	ThreadPool(int num) : threads_num(num) {
 		
@@ -32,9 +52,9 @@ public:
 public:
 	bool run() {
 		for(int i=0; i < threads_num; i++) {
-			WorkThread* p = new WorkThread();
+			WorkThread* p = new WorkThread(this);
 			threads.push_back(p);
-			p->start(function(this, ThreadPool::work_proc));
+			p->start();
 		}
 	}
 
@@ -47,12 +67,17 @@ public:
 		}
 	}
 
-	bool newtask(ITask*, int time = -1, int times = 0) {
-		return true;
+	bool newtask(ITask* task, int time = -1, int times = 0) {
+		return task_queue_.push(task);
 	}
 
 private:
 	bool work_proc() {
+		RefPtr<ITask> pTask;
+		while(task_queue_.pop(pTask)) {
+			pTask->work();
+			pTask->onfinish();
+		}
 		return true;
 	}
 
@@ -61,6 +86,15 @@ private:
 	std::vector<WorkThread*> threads;
 	SemaphoreQueue< RefPtr<ITask> > task_queue_;	
 };
+
+
+bool WorkThread::loop() { 
+	if(NULL != pool_) {
+		return pool_->work_proc();
+	}
+
+	return false;
+}
 
 class ThreadPoolManager {
 public:
@@ -80,6 +114,12 @@ public:
 		thread_pool_ = new ThreadPool(number_of_thread);
 		thread_pool_->run();
 	}
+
+	bool newtask(ITask* task, int time = -1, int times = 0) {
+		//assert(NULL != thread_pool_);
+		return thread_pool_->newtask(task, time, times);
+	}
+
 private:
 	ThreadPool* thread_pool_;
 	int number_of_thread;

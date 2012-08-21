@@ -37,11 +37,11 @@ inline Semaphore::~Semaphore() {
 	if (sem) CloseHandle(sem);
 }
 
-inline void Semaphore::down() {
+inline void Semaphore::wait() {
 	WaitForSingleObject(sem, INFINITE);
 }
 
-inline void Semaphore::up() {
+inline void Semaphore::release() {
 	ReleaseSemaphore(sem, 1, NULL);
 }
 
@@ -55,11 +55,11 @@ inline Semaphore::~Semaphore() {
 	sem_destroy(&sem);
 }
 
-inline void Semaphore::down() {
+inline void Semaphore::wait() {
 	sem_wait(&sem);
 }
 
-inline void Semaphore::up() {
+inline void Semaphore::release() {
 	sem_post(&sem);
 }
 
