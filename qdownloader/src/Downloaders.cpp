@@ -3,6 +3,7 @@
 #include <list>
 #include "RefCounted.h"
 #include "DownloadObject.h"
+#include "ThreadPool.h"
 
 
 namespace q {
@@ -26,6 +27,10 @@ public:
 		return 0;
 	}
 
+	void remove_task(const char* sUrl) {
+
+	}
+
 public:
 	Downloaders(void) {};
 	~Downloaders(void) {};
@@ -37,7 +42,7 @@ private:
 
 
 // create downloaders object 
-static IDownloaders* create_downloaders() {
+IDownloaders* create_downloaders() {
 	return(new Downloaders());
 }
 
