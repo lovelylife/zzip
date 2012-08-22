@@ -41,15 +41,15 @@ struct tests {
 class DownloadController : public q::IDownloadController {
 public:
 	void OnAttach(q::IDownloadObject*) {
-		printf("DownloadController attached.");
+		printf("DownloadController attached.\r\n");
 	}
 
 	void OnDettach() {
-		printf("DownloadController deattached.");
+		printf("DownloadController deattached.\r\n");
 	}
 
 	void OnStatusChanged(int) {
-		printf("DownloadController OnStatusChanged.");
+		printf("DownloadController OnStatusChanged.\r\n");
 	}
 
 	size_t OnRecvData(void* ptr, size_t size) {
@@ -63,7 +63,12 @@ int _tmain(int argc, _TCHAR* argv[]) {
 	q::IDownloaders* downloaders = q::create_downloaders();
 	downloaders->initialize(3);
 
-	if(0 != downloaders->create_task("http://baidu.com/index.html", "C:\\a.html", new DownloadController)) {
+	if(0 != downloaders->create_task(
+		"http://wx.onlinedown.net/down/SinaUC_Release_8.3.4.22616.zip", 
+		"C:\\a.html", 
+		new DownloadController
+	)) 
+	{
 		printf("error create download task.");
 	}
 
