@@ -51,6 +51,10 @@ public:
 	void OnStatusChanged(int) {
 		printf("DownloadController OnStatusChanged.");
 	}
+
+	size_t OnRecvData(void* ptr, size_t size) {
+		return size;
+	}
 };
 
 
@@ -61,6 +65,10 @@ int _tmain(int argc, _TCHAR* argv[]) {
 
 	if(0 != downloaders->create_task("http://baidu.com/index.html", "C:\\a.html", new DownloadController)) {
 		printf("error create download task.");
+	}
+
+	while(true) {
+
 	}
 
 	return 0;

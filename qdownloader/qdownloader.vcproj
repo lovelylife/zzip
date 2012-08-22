@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="./include;../base"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -61,6 +61,8 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				AdditionalDependencies="libcurld.lib wldap32.lib ssleay32.lib libeay32.lib ws2_32.lib winmm.lib"
+				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;&quot;D:\codes\curl-7.26.0\lib\LIB-$(ConfigurationName)&quot;;&quot;D:\codes\curl-7.26.0&quot;"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -151,10 +153,6 @@
 			>
 			<File
 				RelativePath=".\src\Downloaders.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\DownloadObject.cpp"
 				>
 			</File>
 			<File

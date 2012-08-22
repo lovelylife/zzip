@@ -23,10 +23,10 @@ Thread::~Thread(){}
 bool Thread::start(){
 	if(!bRunning_) {
 #ifdef OS_WIN
-		thread_ = (HANDLE)_beginthreadex( 0, 0, &ThreadFunc, this, 0, (unsigned*)&thread_id_ );
+		thread_ = (HANDLE)_beginthreadex( 0, 0, &threadfunc, this, 0, (unsigned*)&thread_id_ );
 		if (thread_ == 0) return false;
 #else
-		if (0 != pthread_create(&thread_, NULL, &ThreadFunc, this)) {
+		if (0 != pthread_create(&thread_, NULL, &threadfunc, this)) {
 			thread_ = 0;
 			return false;
 		}
@@ -71,12 +71,12 @@ bool Thread::stop() {
 }
 
 #ifdef OS_WIN
-unsigned __stdcall Thread::ThreadFunc( void* pArguments )
+unsigned __stdcall 
 #else
-void* Thread::ThreadFunc( void* pArguments )
+void* 
 #endif
 
-{
+Thread::threadfunc( void* pArguments ) {
 	Thread* this_ = (Thread*)pArguments;
 	this_->bRunning_ = true;
 	this_->bWaitStop_ = false;
