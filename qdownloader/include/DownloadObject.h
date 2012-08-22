@@ -14,7 +14,10 @@ struct IDownloadObject : Object {
 	virtual const char* get_url() = 0;
 };
 
-IDownloadObject* downloadobject_createinstance(const char* sUrl, const char* sSavePath);
+struct IDownloadEvent : Object {
+	virtual void OnBegin() = 0;
+	virtual void OnEnd(int code) = 0;
+};
 
 } // namespace q
 

@@ -18,8 +18,8 @@
 namespace q {
 
 struct ITask : Object {
-	virtual bool work() = 0;
-	virtual void onfinish() = 0;
+	virtual bool Task() = 0;
+	virtual void OnFinish() = 0;
 };
 
 class ThreadPool;

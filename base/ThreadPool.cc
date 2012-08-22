@@ -37,6 +37,7 @@ ThreadPool::~ThreadPool()
 
 bool ThreadPool::run()
 {
+	task_queue_.open();
 	for(int i=0; i < threads_num; i++) {
 		WorkThread* p = new WorkThread(this);
 		threads.push_back(p);
@@ -53,6 +54,7 @@ void ThreadPool::stop()
 			p->timedwait_stop();
 		}
 	}
+	task_queue_.close();
 }
 
 bool ThreadPool::newtask( ITask* task, int time /*= -1*/, int times /*= 0*/ )
@@ -64,8 +66,8 @@ bool ThreadPool::work_proc()
 {
 	RefPtr<ITask> pTask;
 	while(task_queue_.pop(pTask)) {
-		pTask->work();
-		pTask->onfinish();
+		pTask->Task();
+		pTask->OnFinish();
 	}
 	return true;
 }

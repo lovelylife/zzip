@@ -48,9 +48,9 @@ public:
 // 保护方法
 protected:
 #  ifdef OS_WIN
-	static unsigned __stdcall ThreadFunc( void* pArguments );
+	static unsigned __stdcall threadfunc( void* pArguments );
 #  else
-	static void* ThreadFunc( void* pArguments );
+	static void* threadfunc( void* pArguments );
 #  endif
 
 	virtual bool loop() = 0;
