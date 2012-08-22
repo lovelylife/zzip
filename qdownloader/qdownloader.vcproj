@@ -62,7 +62,7 @@
 			<Tool
 				Name="VCLibrarianTool"
 				AdditionalDependencies="libcurld.lib wldap32.lib ssleay32.lib libeay32.lib ws2_32.lib winmm.lib"
-				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;&quot;D:\codes\curl-7.26.0\lib\LIB-$(ConfigurationName)&quot;;&quot;D:\codes\curl-7.26.0&quot;"
+				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;&quot;../../thirdparty/curl-7.26.0/lib/LIB-$(ConfigurationName)&quot;;&quot;../../thirdparty/curl-7.26.0&quot;"
 			/>
 			<Tool
 				Name="VCALinkTool"

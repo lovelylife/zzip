@@ -84,10 +84,10 @@ public:
 
 // 接口IDownloadObject
 public:
-	uint64 get_downloaded() { return 0; }
-	uint64 get_size() { return 0; }
-	const char* get_actual_url() { return ""; }
-	const char* get_url() { return ""; }
+	uint64 get_downloaded() { return downloaded_size_; }
+	uint64 get_size() { return file_size_; }
+	const char* get_actual_url() { return actual_url_.c_str(); }
+	const char* get_url() { return url_.c_str(); }
 
 protected:
 	DownloadObject(void) 
@@ -142,8 +142,18 @@ public:
 	size_t write_header(char* buffer, size_t size) {
 		// parse header info
 		std::string header(buffer, size);
-		download_object_->write_header("1", "2");
+		size_t pos = header.find_first_of(':');
+		if(pos != std::string::npos) {
+			download_object_->write_header(header.substr(0, pos-1), "2");
+		} else {
+			// get status code
+		}
+		
 		return size;
+	}
+
+	const char* get_url() {
+		return download_object_->get_url();
 	}
 
 public:
@@ -192,7 +202,7 @@ public:
 
 	bool Task() {
 		if(controller_proxy) {
-			const char* url = "http://wx.onlinedown.net/down/SinaUC_Release_8.3.4.22616.zip";
+			const char* url = controller_proxy->get_url();
 			if(NULL != url) {
 				CURL *curl;
 				CURLcode res;
