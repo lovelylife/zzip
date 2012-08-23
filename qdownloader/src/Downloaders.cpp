@@ -11,6 +11,14 @@
 #include <sstream>
 #include <map>
 
+void static trim_right(std::string& s) {
+	s.erase(s.find_last_not_of(' ')+1);
+}
+
+void static trim_left(std::string& s) {
+	s.erase(s.find_first_not_of(' ')+1);
+}
+
 namespace q {
 
 //////////////////////////////////////////////////////////////////////////
@@ -69,6 +77,7 @@ public:
 
 	size_t write_data(char* buffer, size_t size) {
 		downloaded_size_ += size;
+		printf("downloaded size: %d\r\n", downloaded_size_);
 		if(!fstream_.fail()) {
 			fstream_.write(buffer, size);
 		}
@@ -81,6 +90,8 @@ public:
 			headers_[name] = value;
 		}
 	}
+
+	uint32 status() { return status_code_; }
 
 // 接口IDownloadObject
 public:
@@ -109,10 +120,11 @@ private:
 	std::string url_;
 	std::string actual_url_;
 	std::string save_path_;
-	std::map<std::string, std::string> headers_;
 	uint64 file_size_;
 	uint64 downloaded_size_;
 	std::ofstream fstream_;
+	uint32 status_code_;
+	std::map<std::string, std::string> headers_;
 
 }; // class DownloadObject
 
@@ -144,9 +156,17 @@ public:
 		std::string header(buffer, size);
 		size_t pos = header.find_first_of(':');
 		if(pos != std::string::npos) {
-			download_object_->write_header(header.substr(0, pos-1), "2");
+			std::string tmp = header.substr(0, pos-1);
+			trim_left(tmp);
+			download_object_->write_header(tmp, "2");
 		} else {
 			// get status code
+			std::string http_version;
+			size_t blank_pos = header.find(' ');
+			if(blank_pos != std::string::npos) {
+				// http version
+
+			}
 		}
 		
 		return size;
@@ -192,12 +212,14 @@ public:
 
 	static size_t recv_header(void *ptr, size_t size,size_t nmemb, void *userdata) {
 		DownloadTask* this_ = static_cast<DownloadTask*>(userdata);
-		return this_->OnRecvHeaderLine(ptr, size * nmemb);
+		this_->OnRecvHeaderLine(ptr, size * nmemb);
+		return (size * nmemb);
 	}
 
 	static size_t recv_data(void *ptr, size_t size,size_t nmemb, void *userdata) {
 		DownloadTask* this_ = static_cast<DownloadTask*>(userdata);
-		return this_->OnRecvData(ptr, size * nmemb);
+		this_->OnRecvData(ptr, size * nmemb);
+		return size * nmemb;
 	}
 
 	bool Task() {
