@@ -10,7 +10,6 @@ namespace q {
 struct IDownloadController : Object {
 	virtual void OnAttach(IDownloadObject*) = 0;
 	virtual void OnDettach() = 0;
-	virtual void OnStatusChanged(int) = 0;
 };
 
 } // namespace q

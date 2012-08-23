@@ -16,7 +16,7 @@ void static trim_right(std::string& s) {
 }
 
 void static trim_left(std::string& s) {
-	s.erase(s.find_first_not_of(' ')+1);
+	s.erase(0, s.find_first_not_of(' '));
 }
 
 namespace q {
@@ -82,15 +82,28 @@ public:
 			fstream_.write(buffer, size);
 		}
 
-		return fstream_.tellp();
+		size_t writebytes = fstream_.tellp();
+		if(downloaded_size_ == file_size_) {
+			fstream_.close();
+
+		}
+
+		return writebytes;
 	}
 
 	void write_header(const std::string& name, const std::string& value) {
-		if(!name.empty()) {
-			headers_[name] = value;
-		}
+		if(status() == 200) {
+			if(!name.empty()) {
+				headers_[name] = value;
+			}
+
+			if(name == "Content-Length") {
+				set_filesize(atoi(value.c_str()));
+			}
+		}		
 	}
 
+	void   set_status(uint32 code) { status_code_ = code; }
 	uint32 status() { return status_code_; }
 
 // 接口IDownloadObject
@@ -154,18 +167,25 @@ public:
 	size_t write_header(char* buffer, size_t size) {
 		// parse header info
 		std::string header(buffer, size);
-		size_t pos = header.find_first_of(':');
+		size_t pos = header.find_first_of(":");
 		if(pos != std::string::npos) {
-			std::string tmp = header.substr(0, pos-1);
-			trim_left(tmp);
-			download_object_->write_header(tmp, "2");
+			std::string name = header.substr(0, pos);
+			std::string value = header.substr(pos+1, header.size()-pos-1);
+			trim_left(value);
+			download_object_->write_header(name, value);
 		} else {
 			// get status code
 			std::string http_version;
 			size_t blank_pos = header.find(' ');
 			if(blank_pos != std::string::npos) {
 				// http version
-
+				http_version = header.substr(0, blank_pos);
+			}
+			size_t old_blank_pos = blank_pos;
+			blank_pos = header.find(' ', old_blank_pos+1);
+			if(blank_pos != std::string::npos) {
+				// http status code
+				download_object_->set_status(atoi(header.substr(old_blank_pos+1, blank_pos).c_str()));
 			}
 		}
 		
