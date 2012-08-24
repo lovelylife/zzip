@@ -6,6 +6,7 @@
 //#include "Color.h"
 #include <atlconv.h>
 #include "Downloaders.h"
+#include <assert.h>
 
 
 // ц╤╬ынд╪Ч
@@ -40,8 +41,9 @@ struct tests {
 
 class DownloadController : public q::IDownloadController {
 public:
-	void OnAttach(q::IDownloadObject*) {
+	void OnAttach(q::IDownloadObject* p) {
 		printf("DownloadController attached.\r\n");
+		object_ = p;
 	}
 
 	void OnDettach() {
@@ -55,6 +57,32 @@ public:
 	size_t OnRecvData(void* ptr, size_t size) {
 		return size;
 	}
+
+	bool IsCompleted() {
+		assert(object_);
+		return (object_->get_downloaded() == object_->get_size() && object_->get_downloaded() > 0);
+	}
+
+	uint64 get_download() {
+		assert(object_);
+		return object_->get_downloaded();
+	}
+
+	uint64 get_total_size() {
+		assert(object_);
+		return object_->get_size();
+	}
+
+	void Dump() {
+		std::ostringstream os;
+		os << "url:\t\t" << object_->get_url() << std::endl;
+		os << "actual url:\t" << object_->get_actual_url() << std::endl;
+		os << "size:\t\t" << object_->get_size() << " bytes" << std::endl;
+		printf(os.str().c_str());
+	}
+
+private:
+	RefPtr<q::IDownloadObject> object_;
 };
 
 
@@ -63,18 +91,33 @@ int _tmain(int argc, _TCHAR* argv[]) {
 	q::IDownloaders* downloaders = q::create_downloaders();
 	downloaders->initialize(3);
 
+	RefPtr<DownloadController> controller = new DownloadController;
 	if(0 != downloaders->create_task(
-		"http://wx.onlinedown.net/down/SinaUC_Release_8.3.4.22616.zip", 
-		"C:\\a.html", 
-		new DownloadController
+		"http://sq2.newhua.com/down/LeapFTP3.0.1.46_yfy.zip", 
+		"C:\\a.zip", 
+		controller
 	)) 
 	{
 		printf("error create download task.");
 	}
 
-	while(true) {
+	std::streambuf* old = std::cout.rdbuf();
 
+	while(true) {
+		Sleep(1000);
+		//system("cls");
+		std::cout.flush();
+		std::cout.rdbuf(old);
+		std::cout.seekp(old->
+		std::cout << "downloaded: " << controller->get_download() << " bytes";
+		
+		if(controller->IsCompleted()) {
+			printf("Download Completed.\r\n");
+			break;
+		}
 	}
+
+	controller->Dump();
 
 	return 0;
 // #ifdef USING_TestCode

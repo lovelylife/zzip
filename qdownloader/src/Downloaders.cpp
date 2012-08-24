@@ -10,13 +10,14 @@
 #include <algorithm>
 #include <sstream>
 #include <map>
+#include <iostream>
 
-void static trim_right(std::string& s) {
-	s.erase(s.find_last_not_of(' ')+1);
+void static trim_right(std::string& s, const char* str = " ") {
+	s.erase(s.find_last_not_of(str)+1);
 }
 
-void static trim_left(std::string& s) {
-	s.erase(0, s.find_first_not_of(' '));
+void static trim_left(std::string& s, const char* str = " ") {
+	s.erase(0, s.find_first_not_of(str));
 }
 
 namespace q {
@@ -67,9 +68,10 @@ public:
 		fstream_.open(sFile.c_str(), std::ios::binary);
 
 		if(!fstream_.is_open()) {
-			std::ostringstream os;
-			os << "open file failed [file://" << sFile << "]" << std::endl;
+			//std::ostringstream os;
+			std::cout << "open file failed [file://" << sFile << "], error code:" << errno << std::endl;
 			//OnError(-3, os.str().c_str());
+
 			return false;
 		}
 		return true; 
@@ -77,7 +79,7 @@ public:
 
 	size_t write_data(char* buffer, size_t size) {
 		downloaded_size_ += size;
-		printf("downloaded size: %d\r\n", downloaded_size_);
+		//printf("downloaded size: %d\r\n", downloaded_size_);
 		if(!fstream_.fail()) {
 			fstream_.write(buffer, size);
 		}
@@ -100,7 +102,12 @@ public:
 			if(name == "Content-Length") {
 				set_filesize(atoi(value.c_str()));
 			}
-		}		
+		} else if( status() == 302 ) {
+			if(name == "Location") {
+				//set_filesize(atoi(value.c_str()));
+				actual_url_ = value;
+			}
+		} 	
 	}
 
 	void   set_status(uint32 code) { status_code_ = code; }
@@ -172,6 +179,7 @@ public:
 			std::string name = header.substr(0, pos);
 			std::string value = header.substr(pos+1, header.size()-pos-1);
 			trim_left(value);
+			trim_right(value, "\n\r");
 			download_object_->write_header(name, value);
 		} else {
 			// get status code
