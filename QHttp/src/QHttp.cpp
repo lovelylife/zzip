@@ -1,5 +1,5 @@
 
-#include "Downloaders.h"
+#include "QHttp.h"
 #include "RefCounted.h"
 #include "DownloadObject.h"
 #include "ThreadPool.h"
@@ -288,19 +288,13 @@ public:
 
 private:
 	RefPtr<DownloadControllerProxy> controller_proxy;
-	Downloaders* downloaders;
+	HttpManager* downloaders;
 };
 
-class Downloaders : public IDownloaders {
+class HttpManager : public Http {
 // IDownloaders 接口
 public:
-	void initialize(int thread_num) {
-		/* Must initialize libcurl before any threads are started */ 
-		curl_global_init(CURL_GLOBAL_ALL);
-
-		thread_pool_manager_.run(thread_num);
-	}
-
+	
 	long create_task(const char* sUrl, const char* sSavePath, IDownloadController* controller) {
 		RefPtr<DownloadControllerProxy> controller_proxy = DownloadControllerProxy::create(sUrl, sSavePath, controller);
 		if(NULL != controller_proxy) {
@@ -318,9 +312,17 @@ public:
 
 	}
 
+protected:
+	void initialize(int thread_num) {
+		/* Must initialize libcurl before any threads are started */ 
+		curl_global_init(CURL_GLOBAL_ALL);
+		// create thread pool
+		thread_pool_manager_.run(thread_num);
+	}
+
 public:
-	Downloaders(void) {};
-	~Downloaders(void) {};
+	HttpImpliment(void) {};
+	~HttpImpliment(void) {};
 
 private:
 	std::list< RefPtr<DownloadControllerProxy> > queue_;
@@ -329,8 +331,8 @@ private:
 
 
 // create downloaders object 
-IDownloaders* create_downloaders() {
-	return(new Downloaders());
+Http* create_http(int thread_num) {
+	return HttpManager::create(thread_num);
 }
 
 } // namespace q

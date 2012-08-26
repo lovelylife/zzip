@@ -12,6 +12,10 @@ struct IDownloadController : Object {
 	virtual void OnDettach() = 0;
 };
 
+struct IRequestController : Object {
+	virtual void OnFinish(IRequestObject*);
+};
+
 } // namespace q
 
 #endif // Downloaders_h__
