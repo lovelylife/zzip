@@ -14,9 +14,9 @@ struct IDownloadObject : Object {
 	virtual const char* get_url() = 0;
 };
 
-struct IDownloadEvent : Object {
-	virtual void OnBegin() = 0;
-	virtual void OnEnd(int code) = 0;
+struct IRequestObject : Object {
+	virtual const char* get_content() = 0;
+	virtual const char* get_header(const char*);
 };
 
 } // namespace q

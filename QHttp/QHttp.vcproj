@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="qdownloader"
+	Name="QHttp"
 	ProjectGUID="{B6C3319A-367A-4E77-8340-50EDE6CF6806}"
 	RootNamespace="qdownloader"
 	Keyword="Win32Proj"
@@ -152,7 +152,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\src\Downloaders.cpp"
+				RelativePath=".\src\QHttp.cpp"
 				>
 			</File>
 			<File
@@ -174,11 +174,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\Downloaders.h"
+				RelativePath=".\include\DownloadObject.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\DownloadObject.h"
+				RelativePath=".\include\QHttp.h"
 				>
 			</File>
 		</Filter>
