@@ -8,7 +8,7 @@ namespace q {
 
 class Http : public Object {
 public:
-	virtual long Request (const char* sUrl, ICallBack*);
+	virtual long Request (const char* sUrl, IRequestController*);
 	virtual long Download(const char* sUrl, const char* sSavePath, IDownloadController* control) = 0;
 };
 
