@@ -22,12 +22,19 @@ void static trim_left(std::string& s, const char* str = " ") {
 
 namespace q {
 
+class HttpManager;
 
+class IHttpWriterObject : public Object {
+	// 应答结果和http的版本字符串
+	virtual void write_httpv_status(const char*, int)    = 0;
+	virtual void write_header(char* buffer, size_t size) = 0;
+	virtual void write_data  (char* buffer, size_t size) = 0;
+};
 
 //////////////////////////////////////////////////////////////////////////
 // class DownloadObject
 //////////////////////////////////////////////////////////////////////////
-class DownloadObject : public IDownloadObject {
+class DownloadObject : public IDownloadObject, virtual public IHttpWriterObject {
 public:
 	static DownloadObject* create(const char* sUrl, const char* sSavePath) {
 		if(NULL == sUrl || NULL == sSavePath) {
@@ -41,45 +48,84 @@ public:
 		return p;
 	}
 
+// IHttpResponse
 public:
-
-	bool set_filesize(size_t size) 
-	{
-		downloaded_size_ = 0; 
-		file_size_ = size;
-
-		if(fstream_.is_open()) { 
-			fstream_.clear();
-			fstream_.close();
-		}
-
-		std::string sFile = save_path_;
-		std::replace(sFile.begin(), sFile.end(), '\\', '/');
-
-		// 打开文件
-		fstream_.open(sFile.c_str(), std::ios::binary);
-
-		if(!fstream_.is_open()) {
-			std::cout << "open file failed [file://" << sFile << "], error code:" << errno << std::endl;
-			return false;
-		}
-		return true; 
+	const char* url() {
+		return url_.c_str();
 	}
 
-	size_t write_data(char* buffer, size_t size) {
-		downloaded_size_ += size;
-		//printf("downloaded size: %d\r\n", downloaded_size_);
-		if(!fstream_.fail()) {
-			fstream_.write(buffer, size);
+	virtual int status(int s = 0) {
+		if(s > 0) {
+			status_code_ = s;
 		}
 
-		size_t writebytes = fstream_.tellp();
-		if(downloaded_size_ == file_size_) {
-			fstream_.close();
-		}
-
-		return writebytes;
+		return status_code_;
 	}
+
+	const char* header(const char* name, const char* value) {
+
+		if(name != NULL) {
+			if(value != NULL) {
+				headers_[std::string(name)] = value;
+				return value;
+			}
+			
+			std::map<std::string, std::string>::const_iterator cit = headers_.find(name);
+
+			if(cit == headers_.end()) {
+				return cit->second;
+			}			
+		}
+		
+		return "";
+	}
+
+	uint64 size(uint64 content_length = 0) {
+		if(content_length > 0) {
+			downloaded_size_ = 0; 
+			file_size_ = size;
+
+			if(fstream_.is_open()) { 
+				fstream_.clear();
+				fstream_.close();
+			}
+
+			std::string sFile = save_path_;
+			std::replace(sFile.begin(), sFile.end(), '\\', '/');
+
+			// 打开文件
+			fstream_.open(sFile.c_str(), std::ios::binary);
+
+			if(!fstream_.is_open()) {
+				std::cout << "open file failed [file://" << sFile << "], error code:" << errno << std::endl;
+				return 0;
+			}			
+		}
+
+		return file_size_;
+	}
+
+// IDownloadObject
+public:
+	uint64 downloaded() { 
+		return downloaded_size_; 
+	}
+
+	virtual const char* actual_url() { 
+		return actual_url_.c_str(); 
+	}
+
+	virtual bool completed() = 0;
+
+// 接口IDownloadObject
+public:
+	uint64 get_downloaded() 
+
+	const char* get_actual_url() 
+	const char* get_url() { return url_.c_str(); }
+
+// IHttpWriterObject
+public:
 
 	void write_header(const std::string& name, const std::string& value) {
 		if(status() == 200) {
@@ -88,7 +134,7 @@ public:
 			}
 
 			if(name == "Content-Length") {
-				set_filesize(atoi(value.c_str()));
+				size(atoi(value.c_str()));
 			}
 		} else if( status() == 302 ) {
 			if(name == "Location") {
@@ -97,15 +143,20 @@ public:
 		} 	
 	}
 
-	void   set_status(uint32 code) { status_code_ = code; }
-	uint32 status() { return status_code_; }
+	void write_data(char* buffer, size_t size) {
+		downloaded_size_ += size;
+		//printf("downloaded size: %d\r\n", downloaded_size_);
+		if(!fstream_.fail()) {
+			fstream_.write(buffer, size);
+		}
 
-// 接口IDownloadObject
-public:
-	uint64 get_downloaded() { return downloaded_size_; }
-	uint64 get_size() { return file_size_; }
-	const char* get_actual_url() { return actual_url_.c_str(); }
-	const char* get_url() { return url_.c_str(); }
+		size_t writebytes = fstream_.tellp();
+		if((downloaded_size_ == file_size_) && (file_size_ > 0)) {
+			fstream_.close();
+		}
+	}
+
+
 
 protected:
 	DownloadObject(void) 
@@ -114,6 +165,7 @@ protected:
 	, save_path_("")
 	, file_size_(0)
 	, downloaded_size_(0)
+	, status_code_(0)
 	{
 
 	}
@@ -136,10 +188,18 @@ private:
 }; // class DownloadObject
 
 
+
 //////////////////////////////////////////////////////////////////////////
-// struct IControllerProxy
+// class RequestObject
 //////////////////////////////////////////////////////////////////////////
-template<class TController, class THttpObject>
+class RequestObject : public IRequestObject {
+
+};
+
+
+//////////////////////////////////////////////////////////////////////////
+// class ControllerProxy
+//////////////////////////////////////////////////////////////////////////
 class ControllerProxy : Object {
 public:
 	size_t write_header(char* buffer, size_t size) {
@@ -151,10 +211,12 @@ public:
 			std::string value = header.substr(pos+1, header.size()-pos-1);
 			trim_left(value);
 			trim_right(value, "\n\r");
-			http_object_->write_header(name, value);
+			object_->write_header(name.c_str(), value.c_str());
 		} else {
 			// get status code
 			std::string http_version;
+			int status = 0;
+
 			size_t blank_pos = header.find(' ');
 			if(blank_pos != std::string::npos) {
 				// http version
@@ -164,25 +226,60 @@ public:
 			blank_pos = header.find(' ', old_blank_pos+1);
 			if(blank_pos != std::string::npos) {
 				// http status code
-				http_object_->set_status(atoi(header.substr(old_blank_pos+1, blank_pos).c_str()));
+				status = (atoi(header.substr(old_blank_pos+1, blank_pos).c_str()));
 			}
+
+			object_->write_httpv_status(http_version.c_str(), status);
 		}
 
 		return size;
 	}
 
+	void http_work() {
+		const char* url = "";
+		if(NULL != url) {
+			CURL *curl;
+			CURLcode res;
+			curl = curl_easy_init();
+			curl_easy_setopt(curl, CURLOPT_URL, url);
+			curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+			curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, &ControllerProxy::recv_header);
+			curl_easy_setopt(curl, CURLOPT_HEADERDATA, this);
+			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,  &ControllerProxy::recv_data);
+			curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
+
+			res = curl_easy_perform(curl); /* ignores error */ 
+			if(res != CURLE_OK)
+				fprintf(stderr, "curl_easy_perform() failed: %s\n",	curl_easy_strerror(res));
+			curl_easy_cleanup(curl);
+		}			
+	}
+
+	static size_t recv_header(void *ptr, size_t size,size_t nmemb, void *userdata) {
+		ControllerProxy* this_ = static_cast<ControllerProxy*>(userdata);
+		this_->OnRecvHeaderLine(ptr, size * nmemb);
+		return (size * nmemb);
+	}
+
+	static size_t recv_data(void *ptr, size_t size,size_t nmemb, void *userdata) {
+		ControllerProxy* this_ = static_cast<ControllerProxy*>(userdata);
+		this_->OnRecvData(ptr, size * nmemb);
+		return size * nmemb;
+	}
+
+
 	size_t write_data(char* buffer, size_t size) {
-		return http_object_->write_data(buffer, size);
+		return object_->write_data(buffer, size);
 	}
 
 	const char* get_url() {
-		return http_object_->url();
+		return object_->url();
 	}
 
 private:
 	ControllerProxy() 
 	: controller_(NULL)
-	, http_object_(NULL)
+	, object_(NULL)
 	{
 
 	}
@@ -190,15 +287,15 @@ private:
 	~ControllerProxy() {}
 
 private:
-	RefPtr<TController> controller_;
-	RefPtr<THttpObject> http_object_;
+	RefPtr<IHttpWriterObject> object_;
+	RefPtr<IController> controller_;
 };
 
 
 //////////////////////////////////////////////////////////////////////////
 // class DownloadControllerProxy
 //////////////////////////////////////////////////////////////////////////
-class DownloadControllerProxy : public IControllerProxy {
+class DownloadControllerProxy : public ControllerProxy {
 // static method
 public:
 	static DownloadControllerProxy* create(const char* sUrl, const char* sSavePath, IDownloadController* controller) {
@@ -214,75 +311,50 @@ public:
 };
 
 
+//////////////////////////////////////////////////////////////////////////
+// class RequestControllerProxy
+//////////////////////////////////////////////////////////////////////////
+class RequestControllerProxy : public IControllerProxy {
+	// static method
+public:
+	static RequestControllerProxy* create(const char* sUrl, IRequestController* controller) {
+		RequestControllerProxy* p = new RequestControllerProxy;
+		p->download_object_ = DownloadObject::create(sUrl, sSavePath);
+		p->controller_ = controller;
+		if(p->controller_) {
+			p->controller_->OnAttach(p->download_object_);
+		}
+
+		return p;
+	}
+};
+
+
 
 //////////////////////////////////////////////////////////////////////////
-// class Downloaders
+// class HttpTask
 //////////////////////////////////////////////////////////////////////////
-
-class HttpManager;
 
 class HttpTask : public ITask {
 public:
-	HttpTask(DownloadControllerProxy* c, HttpManager* d) 
+	HttpTask(ControllerProxy* c) 
 	: controller_proxy(c) 
-	, downloaders(d)
 	{
 		
 	}
 
 	~HttpTask() {}
 
-	static size_t recv_header(void *ptr, size_t size,size_t nmemb, void *userdata) {
-		HttpTask* this_ = static_cast<HttpTask*>(userdata);
-		this_->OnRecvHeaderLine(ptr, size * nmemb);
-		return (size * nmemb);
-	}
-
-	static size_t recv_data(void *ptr, size_t size,size_t nmemb, void *userdata) {
-		HttpTask* this_ = static_cast<HttpTask*>(userdata);
-		this_->OnRecvData(ptr, size * nmemb);
-		return size * nmemb;
-	}
-
+	
 	bool Task() {
 		if(controller_proxy) {
-			const char* url = controller_proxy->get_url();
-			if(NULL != url) {
-				CURL *curl;
-				CURLcode res;
-				curl = curl_easy_init();
-				curl_easy_setopt(curl, CURLOPT_URL, url);
-				curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-				curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, &HttpTask::recv_header);
-				curl_easy_setopt(curl, CURLOPT_HEADERDATA, this);
-				curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,  &HttpTask::recv_data);
-				curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
-				
-				res = curl_easy_perform(curl); /* ignores error */ 
-				if(res != CURLE_OK)
-					fprintf(stderr, "curl_easy_perform() failed: %s\n",	curl_easy_strerror(res));
-				curl_easy_cleanup(curl);
-			}			
+			controller_proxy->http_work();
 		}
-		
 		return true;
 	}
 
-	void OnFinish() {
-
-	}
-
-	size_t OnRecvData(void *ptr, size_t size) {
-		return controller_proxy->write_data((char*)ptr, size);
-	}
-
-	size_t OnRecvHeaderLine(void *ptr, size_t size) {
-		return controller_proxy->write_header((char*)ptr, size);
-	}
-
 private:
-	RefPtr<DownloadControllerProxy> controller_proxy;
-	HttpManager* downloaders;
+	RefPtr<ControllerProxy> controller_proxy;
 };
 
 class HttpManager : public Http {
