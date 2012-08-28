@@ -3,7 +3,7 @@
 #define DownloadController_h__
 
 #include "Object.h"
-#include "DownloadObject.h"
+#include "QHttpObject.h"
 
 namespace q {
 

@@ -2,7 +2,7 @@
 #ifndef QHttp_h__
 #define QHttp_h__
 
-#include "DownloadController.h"
+#include "QHttpController.h"
 
 namespace q {
 
@@ -12,7 +12,7 @@ public:
 	virtual long Download(const char* sUrl, const char* sSavePath, IDownloadController* control) = 0;
 };
 
-Http* create_downloaders();
+Http* create_qhttp(int thread_num);
 
 } // namespace q
 

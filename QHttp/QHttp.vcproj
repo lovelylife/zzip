@@ -152,6 +152,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\src\QCookieManager.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\QHttp.cpp"
 				>
 			</File>
@@ -170,15 +174,19 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\include\DownloadController.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\DownloadObject.h"
+				RelativePath=".\include\QCookieManager.h"
 				>
 			</File>
 			<File
 				RelativePath=".\include\QHttp.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\QHttpController.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\QHttpObject.h"
 				>
 			</File>
 		</Filter>
