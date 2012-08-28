@@ -1,7 +1,7 @@
 
 #include "QHttp.h"
 #include "RefCounted.h"
-#include "DownloadObject.h"
+#include "QHttpObject.h"
 #include "ThreadPool.h"
 
 #include <list>
@@ -139,25 +139,59 @@ private:
 //////////////////////////////////////////////////////////////////////////
 // struct IControllerProxy
 //////////////////////////////////////////////////////////////////////////
-
-struct IControllerProxy : Object {
-	size_t write_header(char* buffer, size_t size) = 0;
-	size_t write_data(char* buffer, size_t size) = 0;
-};
-
-//////////////////////////////////////////////////////////////////////////
-// class RequestControllerProxy
-//////////////////////////////////////////////////////////////////////////
-class RequestControllerProxy : public IControllerProxy {
+template<class TController, class THttpObject>
+class ControllerProxy : Object {
 public:
-	static RequestControllerProxy* create(const char* sUrl, IHttpObject*) {
-		return 0;
+	size_t write_header(char* buffer, size_t size) {
+		// parse header info
+		std::string header(buffer, size);
+		size_t pos = header.find_first_of(":");
+		if(pos != std::string::npos) {
+			std::string name = header.substr(0, pos);
+			std::string value = header.substr(pos+1, header.size()-pos-1);
+			trim_left(value);
+			trim_right(value, "\n\r");
+			http_object_->write_header(name, value);
+		} else {
+			// get status code
+			std::string http_version;
+			size_t blank_pos = header.find(' ');
+			if(blank_pos != std::string::npos) {
+				// http version
+				http_version = header.substr(0, blank_pos);
+			}
+			size_t old_blank_pos = blank_pos;
+			blank_pos = header.find(' ', old_blank_pos+1);
+			if(blank_pos != std::string::npos) {
+				// http status code
+				http_object_->set_status(atoi(header.substr(old_blank_pos+1, blank_pos).c_str()));
+			}
+		}
+
+		return size;
 	}
 
-// IControllerProxy
-public:
+	size_t write_data(char* buffer, size_t size) {
+		return http_object_->write_data(buffer, size);
+	}
 
+	const char* get_url() {
+		return http_object_->url();
+	}
 
+private:
+	ControllerProxy() 
+	: controller_(NULL)
+	, http_object_(NULL)
+	{
+
+	}
+
+	~ControllerProxy() {}
+
+private:
+	RefPtr<TController> controller_;
+	RefPtr<THttpObject> http_object_;
 };
 
 
@@ -177,59 +211,6 @@ public:
 
 		return p;
 	}
-
-// 代理方法
-public:
-	size_t write_data(char* buffer, size_t size) {
-		return download_object_->write_data(buffer, size);
-	}
-
-	size_t write_header(char* buffer, size_t size) {
-		// parse header info
-		std::string header(buffer, size);
-		size_t pos = header.find_first_of(":");
-		if(pos != std::string::npos) {
-			std::string name = header.substr(0, pos);
-			std::string value = header.substr(pos+1, header.size()-pos-1);
-			trim_left(value);
-			trim_right(value, "\n\r");
-			download_object_->write_header(name, value);
-		} else {
-			// get status code
-			std::string http_version;
-			size_t blank_pos = header.find(' ');
-			if(blank_pos != std::string::npos) {
-				// http version
-				http_version = header.substr(0, blank_pos);
-			}
-			size_t old_blank_pos = blank_pos;
-			blank_pos = header.find(' ', old_blank_pos+1);
-			if(blank_pos != std::string::npos) {
-				// http status code
-				download_object_->set_status(atoi(header.substr(old_blank_pos+1, blank_pos).c_str()));
-			}
-		}
-		
-		return size;
-	}
-
-	const char* get_url() {
-		return download_object_->get_url();
-	}
-
-public:
-	DownloadControllerProxy() 
-	: controller_(NULL)
-	, download_object_(NULL)
-	{
-
-	}
-
-	~DownloadControllerProxy() {}
-
-private:
-	RefPtr<IDownloadController> controller_;
-	RefPtr<IHttpObject> object_;
 };
 
 
@@ -242,7 +223,7 @@ class HttpManager;
 
 class HttpTask : public ITask {
 public:
-	HttpTask(DownloadControllerProxy* c, Downloaders* d) 
+	HttpTask(DownloadControllerProxy* c, HttpManager* d) 
 	: controller_proxy(c) 
 	, downloaders(d)
 	{
@@ -309,7 +290,7 @@ class HttpManager : public Http {
 public:
 	
 	long Request(const char* sUrl, IRequestController* controller) {
-		RefPtr<RequestControllerProxy> controller_proxy = RequestControllerProxy::create(sUrl, sSavePath, controller);
+		RefPtr< ControllerProxy<HttpRequestController, HttpRequestObject> > controller_proxy = RequestControllerProxy::create(sUrl, sSavePath, controller);
 		if(NULL != controller_proxy) {
 			queue_.push_back(controller_proxy);
 			if(!thread_pool_manager_.newtask(new HttpTask(controller_proxy, this), -1, 1)) {
@@ -334,8 +315,6 @@ public:
 		return 0;
 	}
 
-
-
 	void remove_task(const char* sUrl) {
 
 	}
@@ -358,8 +337,9 @@ private:
 };
 
 
-// create downloaders object 
-Http* create_http(int thread_num) {
+
+Http* create_qhttp(int thread_num)
+{
 	return HttpManager::create(thread_num);
 }
 
