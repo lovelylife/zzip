@@ -12,7 +12,7 @@ public:
 	virtual long download(const char* sUrl, const char* sSavePath, IDownloadController* control) = 0;
 };
 
-Http* create_qhttp(int thread_num);
+Http* create_qhttp(int thread_number);
 
 } // namespace q
 
