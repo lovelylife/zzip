@@ -200,9 +200,16 @@ class RequestObject : public IRequestObject {
 //////////////////////////////////////////////////////////////////////////
 // class ControllerProxy
 //////////////////////////////////////////////////////////////////////////
-class ControllerProxy : Object {
+class ControllerProxy 
+	: Object 
+{
 public:
-	size_t write_header(char* buffer, size_t size) {
+	virtual void object_write_header(char* buffer, size_t size) = 0;
+	virtual void object_write_data(char* buffer, size_t size) = 0;
+	virtual void object_write_httpv_status(const char* http_version, int s) = 0;
+
+public:
+	size_t parse_header(char* buffer, size_t size) {
 		// parse header info
 		std::string header(buffer, size);
 		size_t pos = header.find_first_of(":");
@@ -211,7 +218,7 @@ public:
 			std::string value = header.substr(pos+1, header.size()-pos-1);
 			trim_left(value);
 			trim_right(value, "\n\r");
-			object_->write_header(name.c_str(), value.c_str());
+			object_write_header(name.c_str(), value.c_str());
 		} else {
 			// get status code
 			std::string http_version;
@@ -229,14 +236,14 @@ public:
 				status = (atoi(header.substr(old_blank_pos+1, blank_pos).c_str()));
 			}
 
-			object_->write_httpv_status(http_version.c_str(), status);
+			object_write_httpv_status(http_version.c_str(), status);
 		}
 
 		return size;
 	}
 
 	void http_work() {
-		const char* url = "";
+		const char* url = ""; // object_->url();
 		if(NULL != url) {
 			CURL *curl;
 			CURLcode res;
@@ -255,41 +262,28 @@ public:
 		}			
 	}
 
-	static size_t recv_header(void *ptr, size_t size,size_t nmemb, void *userdata) {
+	static size_t recv_header(void *ptr, size_t size, size_t nmemb, void *userdata) {
 		ControllerProxy* this_ = static_cast<ControllerProxy*>(userdata);
-		this_->OnRecvHeaderLine(ptr, size * nmemb);
+		this_->parse_header(ptr, size * nmemb);
 		return (size * nmemb);
 	}
 
-	static size_t recv_data(void *ptr, size_t size,size_t nmemb, void *userdata) {
+	static size_t recv_data(void *ptr, size_t size, size_t nmemb, void *userdata) {
 		ControllerProxy* this_ = static_cast<ControllerProxy*>(userdata);
-		this_->OnRecvData(ptr, size * nmemb);
-		return size * nmemb;
-	}
-
-
-	size_t write_data(char* buffer, size_t size) {
-		return object_->write_data(buffer, size);
-	}
-
-	const char* get_url() {
-		return object_->url();
+		this_->object_write_data(ptr, size * nmemb);
+		return (size * nmemb);
 	}
 
 private:
-	ControllerProxy() 
-	: controller_(NULL)
-	, object_(NULL)
-	{
+	ControllerProxy() {
 
 	}
 
-	~ControllerProxy() {}
+	~ControllerProxy() {
 
-private:
-	RefPtr<IHttpWriterObject> object_;
-	RefPtr<IController> controller_;
-};
+	}
+
+}; // class ControllerProxy
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -300,29 +294,41 @@ class DownloadControllerProxy : public ControllerProxy {
 public:
 	static DownloadControllerProxy* create(const char* sUrl, const char* sSavePath, IDownloadController* controller) {
 		DownloadControllerProxy* p = new DownloadControllerProxy;
-		p->download_object_ = DownloadObject::create(sUrl, sSavePath);
-		p->controller_ = controller;
-		if(p->controller_) {
-			p->controller_->OnAttach(p->download_object_);
-		}
+		p->object_ = DownloadObject::create(sUrl, sSavePath);
+// 		p->controller_ = controller;
+// 		if(p->controller_) {
+// 			p->controller_->OnAttach(p->object_);
+// 		}
 
 		return p;
 	}
+
+// 重写ControllerProxy
+public:
+	void object_write_header(char* buffer, size_t size) {
+		object_.wr
+	};
+	void object_write_data(char* buffer, size_t size) {};
+	void object_write_httpv_status(const char* http_version, int s){};
+
+private:
+	RefPtr<IDownloadController> controller_;
+	RefPtr<DownloadObject> object_;
 };
 
 
 //////////////////////////////////////////////////////////////////////////
 // class RequestControllerProxy
 //////////////////////////////////////////////////////////////////////////
-class RequestControllerProxy : public IControllerProxy {
-	// static method
+class RequestControllerProxy : public ControllerProxy {
+// static method
 public:
 	static RequestControllerProxy* create(const char* sUrl, IRequestController* controller) {
 		RequestControllerProxy* p = new RequestControllerProxy;
-		p->download_object_ = DownloadObject::create(sUrl, sSavePath);
+		p->object_ = RequestObject::create(sUrl, sSavePath);
 		p->controller_ = controller;
 		if(p->controller_) {
-			p->controller_->OnAttach(p->download_object_);
+			p->controller_->OnAttach(p->object_);
 		}
 
 		return p;
@@ -358,11 +364,19 @@ private:
 };
 
 class HttpManager : public Http {
-// IDownloaders 接口
+// static
 public:
-	
-	long Request(const char* sUrl, IRequestController* controller) {
-		RefPtr< ControllerProxy<HttpRequestController, HttpRequestObject> > controller_proxy = RequestControllerProxy::create(sUrl, sSavePath, controller);
+	static HttpManager* create(int thread_number) {
+		HttpManager* p = new HttpManager;
+		p->initialize(thread_number)
+
+		return p;
+	}
+
+// IDownloaders 接口
+public:	
+	long request(const char* sUrl, IRequestController* controller) {
+		RefPtr<ControllerProxy> controller_proxy = RequestControllerProxy::create(sUrl, controller);
 		if(NULL != controller_proxy) {
 			queue_.push_back(controller_proxy);
 			if(!thread_pool_manager_.newtask(new HttpTask(controller_proxy, this), -1, 1)) {
@@ -374,7 +388,7 @@ public:
 		return 0;
 	}
 
-	long Download(const char* sUrl, const char* sSavePath, IDownloadController* controller) {
+	long download(const char* sUrl, const char* sSavePath, IDownloadController* controller) {
 		RefPtr<DownloadControllerProxy> controller_proxy = DownloadControllerProxy::create(sUrl, sSavePath, controller);
 		if(NULL != controller_proxy) {
 			queue_.push_back(controller_proxy);
@@ -410,9 +424,9 @@ private:
 
 
 
-Http* create_qhttp(int thread_num)
+Http* create_qhttp(int thread_number)
 {
-	return HttpManager::create(thread_num);
+	return HttpManager::create(thread_number);
 }
 
 } // namespace q
