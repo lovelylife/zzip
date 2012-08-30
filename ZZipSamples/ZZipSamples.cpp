@@ -96,30 +96,41 @@ int _tmain(int argc, _TCHAR* argv[]) {
 
 	q::Http* downloaders = q::create(3);
 
-	RefPtr<DownloadController> controller = new DownloadController;
-	if(0 != downloaders->download(
-		"http://sq2.newhua.com/down/LeapFTP3.0.1.46_yfy.zip", 
-		"C:\\a.zip", 
-		controller
-	)) 
+// 	RefPtr<DownloadController> controller = new DownloadController;
+// 	if(0 != downloaders->download(
+// 		"http://sq2.newhua.com/down/LeapFTP3.0.1.46_yfy.zip", 
+// 		"C:\\a.zip", 
+// 		controller
+// 	)) 
+// 	{
+// 		printf("error create download task.");
+// 	}
+
+	RefPtr<RequestTop100> request_controller = new RequestTop100();
+	// 
+	if(0 != downloaders->request(
+		"http://localhost/phpkind/?app=cdmusic&mod=service&inajax=true&action=top100", 
+		request_controller
+		)) 
 	{
 		printf("error create download task.");
 	}
+
 
 	std::streambuf* old = std::cout.rdbuf();
 
 	while(true) {
 		Sleep(1000);
-		system("cls");
-		std::cout << "downloaded: " << controller->get_download() << " bytes";
-		
-		if(controller->IsCompleted()) {
-			printf("Download Completed.\r\n");
-			break;
-		}
+// 		system("cls");
+// 		std::cout << "downloaded: " << controller->get_download() << " bytes";
+// 		
+// 		if(controller->IsCompleted()) {
+// 			printf("Download Completed.\r\n");
+// 			break;
+// 		}
 	}
 
-	controller->Dump();
+//	controller->Dump();
 
 	return 0;
 // #ifdef USING_TestCode

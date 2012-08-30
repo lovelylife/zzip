@@ -12,7 +12,7 @@ struct IDownloadController : Object {
 };
 
 struct IRequestController : Object {
-	virtual void OnFinish(IRequestObject*);
+	virtual void OnFinish(IRequestObject*) = 0;
 };
 
 } // namespace q

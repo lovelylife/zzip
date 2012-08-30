@@ -102,18 +102,29 @@ private:
 
 class ContentBufferImpl: public IContentImpl {
 public:
+	ContentBufferImpl()
+	: content_size_(0)
+	, read_size_(0)
+	{
+
+	}
+
+	~ContentBufferImpl() {}
+
+public:
 	BodyType type() { return TYPE_BUFFER; }
 	uint64 write_data(const char* data, uint64 size) {
-		
-		if(!completed()) {
-			read_size_ += size;
-			sContent_.append(data, size);
-		}
+		read_size_ += size;
+		sContent_.append(data, size);
 		
 		return size;
 	}
 
-	bool size(uint64 sizes) { content_size_ = sizes; return true; }
+	bool size(uint64 sizes) { 
+		read_size_ = 0; 
+		content_size_ = sizes; 
+		return true; 
+	}
 
 // methods
 public:
@@ -416,11 +427,10 @@ public:
 	}
 
 	void object_write_data(char* buffer, size_t size) {
+		object_->write_data(buffer, size);
 		if(object_->completed()) {
 			controller_->OnFinish(object_);
-		} else {
-			object_->write_data(buffer, size);
-		}		
+		}	
 	}
 
 	void object_write_httpv_status(const char* http_version, int s){
