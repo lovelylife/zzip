@@ -85,6 +85,12 @@ private:
 	RefPtr<q::IDownloadObject> object_;
 };
 
+class RequestTop100 : public q::IRequestController {
+public:
+	void OnFinish(q::IRequestObject* p) {
+		const char* sContent = p->content();
+	}
+};
 
 int _tmain(int argc, _TCHAR* argv[]) {
 

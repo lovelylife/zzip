@@ -104,18 +104,27 @@ class ContentBufferImpl: public IContentImpl {
 public:
 	BodyType type() { return TYPE_BUFFER; }
 	uint64 write_data(const char* data, uint64 size) {
-		sContent_.append(data, size);
+		
+		if(!completed()) {
+			read_size_ += size;
+			sContent_.append(data, size);
+		}
+		
 		return size;
 	}
 
-	bool size(uint64 size) { return true; }
+	bool size(uint64 sizes) { content_size_ = sizes; return true; }
 
 // methods
 public:
 	const char* content() { return sContent_.c_str(); }
-
+	bool completed() {
+		return (content_size_ > 0) && (read_size_ == content_size_);
+	}
 private:
 	std::string sContent_;
+	uint64 content_size_;
+	uint64 read_size_;
 };
 
 class HttpObject 
@@ -236,6 +245,7 @@ public:
 // HttpObject
 public:
 	IContentImpl* content_impl() { return impl_; };
+	bool completed() { return impl_->completed(); }
 
 // IHttpResponse
 public:
@@ -406,7 +416,11 @@ public:
 	}
 
 	void object_write_data(char* buffer, size_t size) {
-		object_->write_data(buffer, size);
+		if(object_->completed()) {
+			controller_->OnFinish(object_);
+		} else {
+			object_->write_data(buffer, size);
+		}		
 	}
 
 	void object_write_httpv_status(const char* http_version, int s){
