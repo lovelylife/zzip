@@ -35,7 +35,7 @@ class IContentImpl : public Object{
 public:
 	typedef enum {TYPE_BUFFER = 0, TYPE_FILE =1} BodyType;
 	virtual BodyType type() = 0;
-	virtual   bool size(uint64 s);
+	virtual   bool size(uint64 s) = 0;
 	virtual uint64 write_data(const char* data, uint64 size) = 0;
 	virtual ~IContentImpl() {};
 };
@@ -43,7 +43,7 @@ public:
 class ContentFileImpl: public IContentImpl {
 public:
 	BodyType type() { return TYPE_FILE; }
-	bool size(int size) {
+	bool size(uint64 size) {
 		downloaded_size_ = 0; 
 		file_size_ = size;
 
@@ -82,7 +82,7 @@ public:
 
 	uint64 file_size() { return file_size_; }
 	uint64 downloaded_size() { return downloaded_size_; }
-	  bool completed() { return (file_size_ == downloaded_size_) && (file_size_ > 0); }
+	// bool completed() { return (file_size_ == downloaded_size_) && (file_size_ > 0); }
 
 public:
 	ContentFileImpl(const std::string& save_path)
@@ -108,14 +108,25 @@ public:
 		return size;
 	}
 
+	bool size(uint64 size) { return true; }
+
+// methods
+public:
+	const char* content() { return sContent_.c_str(); }
+
 private:
 	std::string sContent_;
 };
 
 class HttpObject 
-	: public Object 
+	: virtual public Object 
 {
 public:
+	void write_httpv_status(const std::string& httpv, int s) {
+		http_version_ = httpv;
+		status_code_  = s;
+	}
+
 	void write_header(const std::string& name, const std::string& value) {
 		if(status() == 200) {
 			if(!name.empty()) {
@@ -169,13 +180,14 @@ protected:
 	std::string url_;
 	std::string actual_url_;
 	uint32 status_code_;
+	std::string http_version_;
 	std::map<std::string, std::string> headers_;
 };
 
 //////////////////////////////////////////////////////////////////////////
 // class DownloadObject
 //////////////////////////////////////////////////////////////////////////
-class DownloadObject : public IDownloadObject, virtual public HttpObject {
+class DownloadObject : virtual public IDownloadObject, virtual public HttpObject {
 public:
 	IContentImpl* content_impl() { return impl_; }
 
@@ -187,10 +199,10 @@ public:
 
 // IDownloadObject
 public:
-	uint64 size() { return impl_->file_size(); }
-	uint64 downloaded_size() { return impl_->downloaded_size(); }
 	const char* actual_url()  { return HttpObject::actual_url(); }
-	bool completed() { impl_->completed(); }
+	uint64 file_size() { return impl_->file_size(); }
+	uint64 downloaded_size() { return impl_->downloaded_size(); }	
+	// bool completed() { return impl_->completed(); }
 
 // constructor/destructor
 public:
@@ -221,6 +233,22 @@ public:
 
 	~RequestObject() {}
 
+// HttpObject
+public:
+	IContentImpl* content_impl() { return impl_; };
+
+// IHttpResponse
+public:
+	const char* url() { return HttpObject::url(); }
+	int status() { return HttpObject::status(); }
+	const char* header(const char* name) {	return HttpObject::header(name); }
+
+// IRequestObject
+public:
+	const char* content() {
+		return impl_->content();
+	}
+
 private:
 	RefPtr<ContentBufferImpl> impl_;
 };
@@ -230,18 +258,18 @@ private:
 // class ControllerProxy
 //////////////////////////////////////////////////////////////////////////
 class ControllerProxy 
-	: Object 
+	: public Object 
 {
 public:
 	virtual void object_write_header(const std::string& name, const std::string& value) = 0;
 	virtual void object_write_data(char* buffer, size_t size) = 0;
 	virtual void object_write_httpv_status(const char* http_version, int s) = 0;
-
+	virtual const char* object_url() = 0;
 // libcurl
 public:
 	void http_work() 
 	{
-		const char* url = ""; // object_->url();
+		const char* url = object_url();
 		if(NULL != url) {
 			CURL *curl;
 			CURLcode res;
@@ -341,8 +369,10 @@ public:
 	}
 
 	void object_write_httpv_status(const char* http_version, int s) {
-		//object_->
+		object_->write_httpv_status(http_version, s);
 	}
+
+	const char* object_url() {	return object_->url(); }
 
 private:
 	RefPtr<IDownloadController> controller_;
@@ -373,11 +403,17 @@ public:
 public:
 	void object_write_header(const std::string& name, const std::string& value) {
 		object_->write_header(name, value);
-	};
+	}
 
-	void object_write_data(char* buffer, size_t size) {};
-	void object_write_httpv_status(const char* http_version, int s){};
+	void object_write_data(char* buffer, size_t size) {
+		object_->write_data(buffer, size);
+	}
 
+	void object_write_httpv_status(const char* http_version, int s){
+		object_->write_httpv_status(http_version, s);
+	}
+
+	const char* object_url() {	return object_->url(); }
 private:
 	RefPtr<IRequestController> controller_;
 	RefPtr<RequestObject> object_;
@@ -467,13 +503,13 @@ public:
 	~HttpManager(void) {};
 
 private:
-	std::list< RefPtr<DownloadControllerProxy> > queue_;
+	std::list< RefPtr<ControllerProxy> > queue_;
 	ThreadPoolManager thread_pool_manager_;	
 };
 
 
 
-Http* create_qhttp(int thread_number)
+Http* create(int thread_number)
 {
 	return HttpManager::create(thread_number);
 }

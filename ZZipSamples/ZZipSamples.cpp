@@ -5,7 +5,7 @@
 #include <iostream>
 //#include "Color.h"
 #include <atlconv.h>
-#include "Downloaders.h"
+#include "QHttp.h"
 #include <assert.h>
 
 
@@ -60,24 +60,24 @@ public:
 
 	bool IsCompleted() {
 		assert(object_);
-		return (object_->get_downloaded() == object_->get_size() && object_->get_downloaded() > 0);
+		return (object_->downloaded_size() == object_->file_size() && object_->downloaded_size() > 0);
 	}
 
 	uint64 get_download() {
 		assert(object_);
-		return object_->get_downloaded();
+		return object_->downloaded_size();
 	}
 
 	uint64 get_total_size() {
 		assert(object_);
-		return object_->get_size();
+		return object_->file_size();
 	}
 
 	void Dump() {
 		std::ostringstream os;
-		os << "url:\t\t" << object_->get_url() << std::endl;
-		os << "actual url:\t" << object_->get_actual_url() << std::endl;
-		os << "size:\t\t" << object_->get_size() << " bytes" << std::endl;
+		os << "url:\t\t" << object_->url() << std::endl;
+		os << "actual url:\t" << object_->actual_url() << std::endl;
+		os << "size:\t\t" << object_->file_size() << " bytes" << std::endl;
 		printf(os.str().c_str());
 	}
 
@@ -88,11 +88,10 @@ private:
 
 int _tmain(int argc, _TCHAR* argv[]) {
 
-	q::IDownloaders* downloaders = q::create_downloaders();
-	downloaders->initialize(3);
+	q::Http* downloaders = q::create(3);
 
 	RefPtr<DownloadController> controller = new DownloadController;
-	if(0 != downloaders->create_task(
+	if(0 != downloaders->download(
 		"http://sq2.newhua.com/down/LeapFTP3.0.1.46_yfy.zip", 
 		"C:\\a.zip", 
 		controller
@@ -105,10 +104,7 @@ int _tmain(int argc, _TCHAR* argv[]) {
 
 	while(true) {
 		Sleep(1000);
-		//system("cls");
-		std::cout.flush();
-		std::cout.rdbuf(old);
-		std::cout.seekp(old->
+		system("cls");
 		std::cout << "downloaded: " << controller->get_download() << " bytes";
 		
 		if(controller->IsCompleted()) {
