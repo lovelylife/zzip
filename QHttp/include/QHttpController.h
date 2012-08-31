@@ -17,4 +17,4 @@ struct IRequestController : Object {
 
 } // namespace q
 
-#endif // Downloaders_h__
+#endif // DownloadController_h__
