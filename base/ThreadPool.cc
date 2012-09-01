@@ -48,13 +48,14 @@ bool ThreadPool::run()
 
 void ThreadPool::stop()
 {
+	task_queue_.close();
 	for(size_t i=0; i < threads.size(); i++) {
 		WorkThread* p = threads[i];
 		if(p) {
-			p->timedwait_stop();
+			p->stop();
 		}
 	}
-	task_queue_.close();
+	
 }
 
 bool ThreadPool::newtask( ITask* task, int time /*= -1*/, int times /*= 0*/ )
@@ -81,8 +82,15 @@ bool ThreadPool::work_proc()
 
 
 
-ThreadPoolManager::ThreadPoolManager()
+ThreadPoolManager::ThreadPoolManager() {
+}
+
+ThreadPoolManager::~ThreadPoolManager()
 {
+	stop();
+	if(NULL != thread_pool_) {
+		delete thread_pool_;
+	}
 }
 
 bool ThreadPoolManager::run(int thread_num)
@@ -106,5 +114,7 @@ void ThreadPoolManager::stop()
 {
 	thread_pool_->stop();
 }
+
+
 
 } // namespace q

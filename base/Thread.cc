@@ -35,22 +35,11 @@ bool Thread::start(){
 	return bRunning_;
 }
 
-bool Thread::begin_waitstop(unsigned long timeout) {
+bool Thread::timedwait_stop(unsigned long timeout) {
 	if(bRunning_) {
 		bWaitStop_ = true;
 #ifdef OS_WIN
 		return WaitForSingleObject(thread_,timeout) == WAIT_OBJECT_0;
-#else
-		pthread_join(thread_, NULL);
-#endif
-	}
-	return true;
-}
-
-bool Thread::timedwait_stop(unsigned long timeout) {
-	if(bRunning_) {
-#ifdef OS_WIN
-		return (WaitForSingleObject(thread_,timeout) == WAIT_OBJECT_0);
 #else
 		pthread_join(thread_, NULL);
 #endif
@@ -107,7 +96,7 @@ void Thread::OnEnd()
 
 }
 
-bool Thread::is_running() const
+bool Thread::running() const
 {
 	return bRunning_;
 }

@@ -85,7 +85,7 @@ private:
 	RefPtr<q::IDownloadObject> object_;
 };
 
-class RequestTop100 : public q::IRequestController {
+class HttpClientRequest : public q::IRequestController {
 public:
 	void OnFinish(q::IRequestObject* p) {
 		const char* sContent = p->content();
@@ -106,7 +106,7 @@ int _tmain(int argc, _TCHAR* argv[]) {
 // 		printf("error create download task.");
 // 	}
 
-	RefPtr<RequestTop100> request_controller = new RequestTop100();
+	RefPtr<HttpClientRequest> request_controller = new HttpClientRequest();
 	// 
 	if(0 != downloaders->request(
 		"http://localhost/phpkind/?app=cdmusic&mod=service&inajax=true&action=top100", 

@@ -29,8 +29,7 @@ public:
 
 // 属性
 public:
-	bool is_running() const;
-	bool timedwait_stop(unsigned long timeout = -1);
+	bool running() const;
 
 // 标准构造和析构函数
 public:
@@ -57,7 +56,7 @@ protected:
 
 	// 等待线程停止
 	// 调用后将设置为等待停止状态,并阻塞调用线程,直到线程停止
-	virtual bool begin_waitstop(unsigned long timeout = -1); 
+	virtual bool timedwait_stop(unsigned long timeout = -1); 
 
 	// 线程开始时被调用
 	// 在线程空间内执行,线程开始时被调用
