@@ -420,6 +420,10 @@ public:
 
 	}
 
+	~RequestControllerProxy(){
+
+	}
+
 // 重写ControllerProxy
 public:
 	void object_write_header(const std::string& name, const std::string& value) {
@@ -457,7 +461,9 @@ public:
 		
 	}
 
-	~HttpTask() {}
+	~HttpTask() {
+
+	}
 
 	bool Task() {
 		if(controller_proxy) {
@@ -523,8 +529,13 @@ protected:
 	}
 
 public:
-	HttpManager(void) {};
-	~HttpManager(void) {};
+	HttpManager(void) {
+
+	}
+
+	~HttpManager(void) {
+
+	}
 
 private:
 	std::list< RefPtr<ControllerProxy> > queue_;

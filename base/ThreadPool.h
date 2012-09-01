@@ -67,6 +67,7 @@ public:
 public:
 	ThreadPoolManager();
 	ThreadPoolManager(int thread_num);
+	~ThreadPoolManager();
 
 private:
 	ThreadPool* thread_pool_;
