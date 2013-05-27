@@ -373,7 +373,7 @@ public:
 		p->object_ = new DownloadObject(sUrl, sSavePath);
  		p->controller_ = controller;
  		if(p->controller_) {
- 			p->controller_->OnAttach(p->object_);
+ 			p->controller_->onreadystatechange();
  		}
 
 		return p;
@@ -433,7 +433,7 @@ public:
 	void object_write_data(char* buffer, size_t size) {
 		object_->write_data(buffer, size);
 		if(object_->completed()) {
-			controller_->OnFinish(object_);
+			controller_->onreadystatechange(READYSTATE::COMPLETED);
 		}	
 	}
 
