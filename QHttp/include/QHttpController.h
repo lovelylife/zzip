@@ -7,12 +7,19 @@
 
 namespace q {
 
-struct IDownloadController : Object {
-	virtual void OnAttach(IDownloadObject*) = 0;
+enum READYSTATE {
+	UNINITIALIZED = 0,
+	LOADING,
+	LOADED,
+	INTERACTIVE,
+	COMPLETED
 };
 
-struct IRequestController : Object {
-	virtual void OnFinish(IRequestObject*) = 0;
+struct IHttpRequest : Object {
+	virtual void open(const char* url, const char* action) = 0;
+	virtual void add_request_header(const char* name, const char* value) = 0;
+	virtual void cookie(const char* name, const char* cookies) = 0;
+	virtual void onreadystatechange(READYSTATE state) = 0;
 };
 
 } // namespace q

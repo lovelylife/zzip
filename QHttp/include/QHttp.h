@@ -8,8 +8,7 @@ namespace q {
 
 class Http : public Object {
 public:
-	virtual long request (const char* sUrl, IRequestController*) = 0;
-	virtual long download(const char* sUrl, const char* sSavePath, IDownloadController* control) = 0;
+	virtual bool send(IRequestController*);
 };
 
 Http* create(int thread_number);
