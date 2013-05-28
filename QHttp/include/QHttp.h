@@ -2,16 +2,36 @@
 #ifndef QHttp_h__
 #define QHttp_h__
 
-#include "QHttpController.h"
+#include "Object.h"
 
 namespace q {
 
-class Http : public Object {
-public:
-	virtual bool send(IRequestController*);
+enum READYSTATE {
+	UNINITIALIZED = 0,
+	LOADING,
+	LOADED,
+	INTERACTIVE,
+	COMPLETED
 };
 
-Http* create(int thread_number);
+enum ACTION {
+	GET = 0,
+	POST,
+};
+
+struct IHttpRequest : Object {
+	virtual void open(const char* url, ACTION action) = 0;
+	virtual void addRequestHeader(const char* name, const char* value) = 0;
+	virtual void cookie(const char* name, const char* cookies) = 0;
+	virtual void onReadyStateChange(READYSTATE state) = 0;
+};
+
+class IHttp : public Object {
+public:
+	virtual bool send(IHttpRequest*) = 0;
+};
+
+IHttp* create(int thread_number);
 
 } // namespace q
 
