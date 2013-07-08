@@ -8,6 +8,7 @@
 #include "QHttp.h"
 #include <assert.h>
 #include "../Config.h"
+#include <exception>
 
 
 // 枚举文件
@@ -114,10 +115,87 @@ public:
 #include <vector>
 
 
+// protocol 
+namespace protocal { namespace service { namespace user {
+
+class verify {
+public:		
+	static const int32 id = 0x00000001;
+	struct session {
+		int len;
+		char data[1];
+	};
+};
+
+}}}
+
+// io 异常
+class stream_io_exception : public std::exception {
+public:
+	stream_io_exception(const char* message);
+
+private:
+	int error_;
+	std::string message_;
+};
+
+// io handler
+class stream_handler {
+public:
+	virtual int w(char* data, int size) = 0;
+	virtual int r(char* data, int size) = 0;
+};
+
+class service_container {
+public:
+	virtual bool run() = 0;
+	virtual bool stop() = 0;
+};
+
+// 服务接口
+class service {
+public:
+	const char* service_name() const;
+};
+
+// 客户端接口
+class client {
+public:
+	// 调用服务接口,返回调用成功或者失败
+	int invoke(const char* service_name_methods, const struct paramters&);
+};
+
+class server {
+public:
+	void add_service(service* serv) {
+		service_container container;
+		container.run();
+		container.stop();
+	}
+
+public:
+	void serve() {}
+
+private:
+	void run_service();
+};
+
+class user_service : public service {
+public:
+	const char* service_name() const { return "user_service"; }
+};
+
+
 
 
 int _tmain(int argc, _TCHAR* argv[]) {
 	
+	server s;
+	user_service us;
+	s.add_service(&us);
+	s.serve();
+
+	// config test
 	Config config;
 	config.Set("images.savepath", "D:\\");
 	config.ToFile("config.json");
