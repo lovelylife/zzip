@@ -26,16 +26,20 @@ bool Config::FromFile( const std::string& sFile )
 	if(sFile.empty()) 
 		return false;
 
+	// 获取文件大小
 	std::ifstream f(sFile.c_str());
-	f.seekg(0, std::ios::beg);
-	f.seekg(std::ios::end);
-	std::streamsize file_size = f.gcount();
+	f.seekg(std::ios::beg, std::ios::end);
+	std::streamsize file_size = f.tellg();
 	if(file_size <= 0)
 		return false;
 
+	// 从文件读取数据
+	f.seekg(0, std::ios::end);
 	char* buffer = new char[file_size];
 	f.read(buffer, file_size);
 	f.close();
+
+	// 初始化
 	bool b = FromString(buffer);
 	delete buffer;
 	buffer = NULL;
