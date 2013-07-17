@@ -32,6 +32,10 @@ namespace base {
 			// URL的组成元素的标识
 			typedef enum {SCHEME=0,USER,PASSWORD,DOMAINS,PORT,PATH,QUERY,ANCHOR,} URL_;
 
+			std::string operator[](URL_ t) {
+				return UrlParams_[t];
+			}
+
 		protected:
 
 			// 解析函数，先解析scheme，再根据 斜杠('/')解析出域名主机

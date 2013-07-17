@@ -283,7 +283,7 @@ public:
 		swap(&r.ptr_);
 	}
 
-protected:
+public:
 	T* ptr_;
 };
 
