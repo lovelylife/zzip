@@ -7,8 +7,6 @@
 #include <atlconv.h>
 #include "QHttp.h"
 #include <assert.h>
-#include "../Config.h"
-#include <exception>
 
 
 // 枚举文件
@@ -41,168 +39,119 @@ struct tests {
 	bool a8 : 1;
 };
 
-
-class Interface1 {
+/*
+class DownloadController : public q::IDownloadController {
 public:
-	virtual void fun() = 0;
-	virtual ~Interface1() {}
-};
-
-class X : public q::Object , public Interface1{
-public:
-	X(){ std::cout << "X::X();" << std::endl; }
-	~X() { std::cout << "X::~X();" << std::endl; }
-
-	void fun() {
-		std::cout << "X::fun();" << std::endl;
-	}
-};
-
-class Z;
-
-class Y : public q::Object{
-public:
-	Y(){ std::cout << "Y::Y();" << std::endl; }
-	~Y();
-
-	
-
-
-	Interface1* x;
-};
-
-class Z : public q::Object {
-public:
-	Z(){
-		std::cout << "Z::Z();" << std::endl;
-		x = new X;
-		y = new Y;
-		
-		y->x = x;
-		 }
-	~Z() { std::cout << "Z::~Z();" << std::endl; }
-
-	void call() {
-		a = 0;
-		std::cout << "Z::call();" << std::endl;
+	void OnAttach(q::IDownloadObject* p) {
+		printf("DownloadController attached.\r\n");
+		object_ = p;
 	}
 
-
-int a;
-RefPtr<Y> y;
-RefPtr<X> x;
-
-};
-
-Y::~Y() { std::cout << "Y::~Y();" << std::endl;
-x->fun();
-}
-
-#define tostr(T) printf("class token"#T"\n")
-
-template <class T>
-class CC {
-public:
-	CC() {}
-	~CC(){}
-
-	void p() {
-		tostr(T);
+	void OnDettach() {
+		printf("DownloadController deattached.\r\n");
 	}
 
-};
+	void OnStatusChanged(int) {
+		printf("DownloadController OnStatusChanged.\r\n");
+	}
 
-#include <vector>
+	size_t OnRecvData(void* ptr, size_t size) {
+		return size;
+	}
 
+	bool IsCompleted() {
+		assert(object_);
+		return (object_->downloaded_size() == object_->file_size() && object_->downloaded_size() > 0);
+	}
 
-// protocol 
-namespace protocal { namespace service { namespace user {
+	uint64 get_download() {
+		assert(object_);
+		return object_->downloaded_size();
+	}
 
-class verify {
-public:		
-	static const int32 id = 0x00000001;
-	struct session {
-		int len;
-		char data[1];
-	};
-};
+	uint64 get_total_size() {
+		assert(object_);
+		return object_->file_size();
+	}
 
-}}}
-
-// io 异常
-class stream_io_exception : public std::exception {
-public:
-	stream_io_exception(const char* message);
+	void Dump() {
+		std::ostringstream os;
+		os << "url:\t\t" << object_->url() << std::endl;
+		os << "actual url:\t" << object_->actual_url() << std::endl;
+		os << "size:\t\t" << object_->file_size() << " bytes" << std::endl;
+		printf(os.str().c_str());
+	}
 
 private:
-	int error_;
-	std::string message_;
+	RefPtr<q::IDownloadObject> object_;
 };
+*/
 
-// io handler
-class stream_handler {
+class ReadyStateChange : public q::IEvent {
 public:
-	virtual int w(char* data, int size) = 0;
-	virtual int r(char* data, int size) = 0;
-};
-
-class service_container {
-public:
-	virtual bool run() = 0;
-	virtual bool stop() = 0;
-};
-
-// 服务接口
-class service {
-public:
-	const char* service_name() const;
-};
-
-// 客户端接口
-class client {
-public:
-	// 调用服务接口,返回调用成功或者失败
-	int invoke(const char* service_name_methods, const struct paramters&);
-};
-
-class server {
-public:
-	void add_service(service* serv) {
-		service_container container;
-		container.run();
-		container.stop();
+	void onReadyStateChange(q::IHttpRequest* p, q::READYSTATE state) {
+		if(q::COMPLETED == state) {
+			if(200 == p->status() ) {
+				std::ostringstream os;
+				os << "download completed!" << std::endl;
+				//os << "url:\t\t" << object_->url() << std::endl;
+				//os << "actual url:\t" << object_->actual_url() << std::endl;
+				//os << "size:\t\t" << object_->file_size() << " bytes" << std::endl;
+				printf(os.str().c_str());
+			}
+			//const char* sContent = p->content();
+		}		
 	}
-
-public:
-	void serve() {}
-
-private:
-	void run_service();
 };
-
-class user_service : public service {
-public:
-	const char* service_name() const { return "user_service"; }
-};
-
 
 
 
 int _tmain(int argc, _TCHAR* argv[]) {
-	
-	server s;
-	user_service us;
-	s.add_service(&us);
-	s.serve();
 
-	// config test
-	Config config;
-	config.Set("images.savepath", "D:\\");
-	config.ToFile("config.json");
+	//q::IHttp* httpclient = q::create(3);
 
-	//RefPtr<Z> z = new Z;
-//	CC<int> c;
-//	c.p();
+// 	RefPtr<DownloadController> controller = new DownloadController;
+// 	if(0 != downloaders->download(
+// 		"http://sq2.newhua.com/down/LeapFTP3.0.1.46_yfy.zip", 
+// 		"C:\\a.zip", 
+// 		controller
+// 	)) 
+// 	{
+// 		printf("error create download task.");
+// 	}
+
+	//RefPtr<q::IHttpRequest> request;
+	//httpclient->createHttpRequest(&request.ptr_);
+	////"http://localhost/phpkind/?app=cdmusic&mod=service&inajax=true&action=top100", 
+	//if(!request->open(
+	//	"http://sq2.newhua.com/down/LeapFTP3.0.1.46_yfy.zip",
+	//	q::GET,
+	//	new ReadyStateChange,
+	//	"D:\\test.wma"
+	//	)) 
+	//{
+	//	printf("error create download task.");
+	//}
+
+	//request->send();
+
+	//std::streambuf* old = std::cout.rdbuf();
+
+//	while(true) {
+//		Sleep(1000);
+// 		system("cls");
+// 		std::cout << "downloaded: " << controller->get_download() << " bytes";
+// 		
+// 		if(controller->IsCompleted()) {
+// 			printf("Download Completed.\r\n");
+// 			break;
+// 		}
+//	}
+
+//	controller->Dump();
+//	httpclient->release();
+//	system("pause");
+	//return 0;
 // #ifdef USING_TestCode
 // 	QUI::Color::doTest();
 // #endif
@@ -235,10 +184,10 @@ int _tmain(int argc, _TCHAR* argv[]) {
 	std::cout << sizeof(ZZipFileItem) << std::endl;
 	ZZipFile zzip;
 	// if(argc <= 1) { return 0; }
-	tstring sZZipFileName = _T("D:/Developing/VCCode/trunk/QUI/QUITest/res/skin.zzip");
+	tstring sZZipFileName = _T("D:/Developing/VCCode/trunk/QUI/Wayixia/res/skin.zzip");
 	// if(zzip.Open(argv[1])) {
 	if(zzip.Open(sZZipFileName)) {
-		zzip.AddFolder(_T("/"), _T("D:/Developing/VCCode/trunk/QUI/QUITest/res/skin"));
+		zzip.AddFolder(_T("/"), _T("D:/Developing/VCCode/trunk/QUI/Wayixia/skin"));
 // 		zzip.AddFile(_T("/1.txt"), _T("C:\\1.txt"));
 // 		zzip.AddFile(_T("/2.txt"), _T("C:\\2.txt"));
 // 		zzip.AddFile(_T("/3.txt"), _T("C:\\3.txt"));

@@ -15,20 +15,29 @@ enum READYSTATE {
 };
 
 enum ACTION {
-	GET = 0,
-	POST,
+	GET = 0L,
+	POST = 1L,
+};
+
+struct IHttpRequest;
+
+struct IEvent : Object {
+	virtual void onReadyStateChange(IHttpRequest*, READYSTATE state) = 0;
 };
 
 struct IHttpRequest : Object {
-	virtual void open(const char* url, ACTION action) = 0;
-	virtual void addRequestHeader(const char* name, const char* value) = 0;
-	virtual void cookie(const char* name, const char* cookies) = 0;
-	virtual void onReadyStateChange(READYSTATE state) = 0;
+	virtual bool open(const char* url, ACTION action, IEvent* event, const char* save_path) = 0;
+	virtual bool setRequestHeader(const char* name, const char* value) = 0;
+	virtual void send(const char* data = NULL) = 0;
+	virtual void escape(const std::string& sIn, std::string& sOut) = 0;
+// response attribute
+	virtual int status() = 0;
+	virtual const char* responseText() = 0;
 };
 
 class IHttp : public Object {
 public:
-	virtual bool send(IHttpRequest*) = 0;
+	virtual bool createHttpRequest(IHttpRequest**) = 0;
 };
 
 IHttp* create(int thread_number);
